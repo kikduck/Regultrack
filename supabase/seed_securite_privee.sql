@@ -1,8 +1,12 @@
 -- Seed: Obligation templates for Sécurité Privée sector
 -- These form the core "moat" — sector knowledge encoded in the product
 
-INSERT INTO public.obligation_templates (sector, name, description, renewal_months, applies_to, proof_type, alert_days)
-VALUES
+INSERT INTO public.obligation_templates (
+  sector, name, description, renewal_months, applies_to, proof_type, alert_days,
+  renewal_process, required_documents, competent_authority, official_url, legal_reference,
+  alert_message_template, inspection_order, inspection_section, help_text,
+  last_verified_at, verified_by, active
+) VALUES
   (
     'securite_privee',
     'Carte professionnelle CNAPS',
@@ -10,16 +14,36 @@ VALUES
     60,
     'employee',
     'pdf',
-    '{90,60,30,7}'
+    '{90,60,30,7}',
+    'Dépôt du dossier sur le portail CNAPS 8 semaines avant expiration. Délai de traitement : 6-8 semaines.',
+    'Formulaire de renouvellement, photo identité récente, justificatif de domicile, attestation d''aptitude professionnelle',
+    'CNAPS — Conseil National des Activités Privées de Sécurité',
+    'https://www.cnaps.interieur.gouv.fr',
+    'Livre VI du CSI, Art. L612-20',
+    'Bonjour,\n\nLa carte CNAPS de {employee_name} expire le {due_date}.\nProcédure : {renewal_process}\nPièces requises : {required_documents}',
+    1,
+    'Habilitations agents',
+    'La carte CNAPS est obligatoire pour tout agent de sécurité. Sans carte valide, l''agent ne peut pas travailler. Le délai de traitement est long (6-8 semaines), anticipez.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
-    'Recyclage aptitude professionnelle',
+    'Recyclage aptitude professionnelle (MAC)',
     'Formation de recyclage obligatoire à chaque renouvellement de la carte CNAPS. Valide la capacité de l''agent à poursuivre son activité.',
     60,
     'employee',
     'pdf',
-    '{90,30,7}'
+    '{90,30,7}',
+    'S''inscrire à une session MAC (Maintien et Actualisation des Compétences) auprès d''un centre agréé avant l''expiration de la carte.',
+    'Attestation de suivi de stage MAC',
+    'Centres de formation agréés',
+    'https://www.cnaps.interieur.gouv.fr',
+    'Livre VI du CSI',
+    'Bonjour,\n\nLe recyclage MAC de {employee_name} est requis avant le {due_date}.\nProcédure : {renewal_process}',
+    2,
+    'Habilitations agents',
+    'Le MAC doit être effectué pour obtenir le renouvellement de la carte CNAPS. Sans ce stage, le renouvellement sera refusé.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
@@ -28,7 +52,17 @@ VALUES
     36,
     'employee',
     'pdf',
-    '{90,30,7}'
+    '{90,30,7}',
+    'S''inscrire à un stage de recyclage SSIAP (1, 2 ou 3) auprès d''un organisme agréé. Le SST ou équivalent à jour est pré-requis.',
+    'Diplôme SSIAP recyclé, attestation SST en cours de validité',
+    'Centres de formation agréés / Ministère de l''Intérieur',
+    'https://www.interieur.gouv.fr',
+    'Arrêté du 2 mai 2005 relatif aux missions, à l''emploi et à la qualification du personnel de sécurité incendie',
+    'Bonjour,\n\nLe diplôme SSIAP de {employee_name} nécessite un recyclage avant le {due_date}.',
+    3,
+    'Formations agents',
+    'Indispensable pour tout agent posté en ERP. Sans recyclage triennal, le diplôme n''est plus valable pour exercer.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
@@ -37,7 +71,17 @@ VALUES
     24,
     'employee',
     'pdf',
-    '{60,30,7}'
+    '{60,30,7}',
+    'Session MAC SST de 7 heures minimum à réaliser tous les 24 mois.',
+    'Certificat de Sauveteur Secouriste du Travail (SST) à jour',
+    'INRS / Organismes habilités',
+    'https://www.inrs.fr',
+    'Code du travail (Art. R. 4224-15)',
+    'Bonjour,\n\nLe certificat SST de {employee_name} expire le {due_date}. Prévoyez une session MAC SST.',
+    4,
+    'Formations agents',
+    'Obligatoire sur la plupart des sites, et pré-requis indispensable pour valider/recycler un diplôme SSIAP.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
@@ -46,16 +90,55 @@ VALUES
     36,
     'employee',
     'pdf',
-    '{90,30,7}'
+    '{90,30,7}',
+    'Formation de recyclage (ex: H0B0) par un organisme agréé puis délivrance du titre par l''employeur.',
+    'Titre d''habilitation électrique signé par l''employeur',
+    'Employeur (après formation)',
+    'https://www.inrs.fr',
+    'Code du travail (Art. R. 4544-9)',
+    'Bonjour,\n\nL''habilitation électrique de {employee_name} arrive à échéance le {due_date}.',
+    5,
+    'Formations agents',
+    'Un agent de sécurité effectuant des rondes techniques doit posséder l''habilitation adaptée (souvent H0B0 ou BE Manoeuvre).',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
-    'Autorisation d''exercer (préfectorale)',
-    'Autorisation délivrée par la préfecture pour l''entreprise de sécurité privée. Obligatoire pour exercer l''activité.',
+    'Visite médicale du travail (aptitude)',
+    'Avis d''aptitude délivré par la médecine du travail, à renouveler périodiquement.',
+    24,
+    'employee',
+    'pdf',
+    '{60,30,7}',
+    'Planifier une visite d''information et de prévention (VIP) ou un examen médical d''aptitude.',
+    'Avis d''aptitude ou attestation de suivi médical',
+    'Service de Santé au Travail (SST)',
+    'https://www.service-public.fr',
+    'Code du travail (Art. L4624-1)',
+    'Bonjour,\n\nLa visite médicale de {employee_name} doit être renouvelée avant le {due_date}.',
+    6,
+    'Habilitations agents',
+    'Obligatoire pour vérifier l''aptitude physique et psychologique de l''agent, particulièrement pour le travail de nuit.',
+    CURRENT_DATE, 'System', true
+  ),
+  (
+    'securite_privee',
+    'Autorisation d''exercer (préfectorale / CNAPS)',
+    'Autorisation délivrée pour l''entreprise de sécurité privée. Obligatoire pour exercer l''activité.',
     60,
     'organization',
     'pdf',
-    '{180,90,30,7}'
+    '{180,90,30,7}',
+    'Dossier de renouvellement complet à soumettre au CNAPS (siège social) plusieurs mois à l''avance.',
+    'Kbis, justificatifs dirigeants, attestations fiscales et sociales',
+    'CNAPS',
+    'https://www.cnaps.interieur.gouv.fr',
+    'Livre VI du CSI, Art. L612-9',
+    'Bonjour,\n\nL''autorisation d''exercer de votre organisation expire le {due_date}. Le délai d''instruction est très long.',
+    1,
+    'Documents entreprise',
+    'L''entreprise ne peut pas facturer ni exercer sans cette autorisation. Le non-renouvellement bloque toute l''activité.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
@@ -64,7 +147,17 @@ VALUES
     12,
     'organization',
     'pdf',
-    '{60,30,7}'
+    '{60,30,7}',
+    'Paiement de la prime annuelle et réception de l''attestation par l''assureur.',
+    'Attestation d''assurance RC Pro en cours de validité',
+    'Compagnie d''assurance',
+    '',
+    'Code des assurances / CSI',
+    'Bonjour,\n\nL''attestation RC Pro expire le {due_date}.',
+    2,
+    'Documents entreprise',
+    'Une preuve de RC Pro valide est souvent demandée par les clients (donneurs d''ordre) avant toute prestation.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
@@ -73,7 +166,17 @@ VALUES
     12,
     'site',
     'pdf',
-    '{60,30,7}'
+    '{60,30,7}',
+    'Révision annuelle du document avec le CSE ou les représentants du personnel, mise à jour des risques liés au site.',
+    'DUERP mis à jour et daté',
+    'Employeur',
+    'https://www.inrs.fr',
+    'Code du travail (Art. R4121-1)',
+    'Bonjour,\n\nLe DUERP du site doit être mis à jour avant le {due_date}.',
+    1,
+    'Documents site',
+    'En cas d''accident du travail, l''absence de DUERP à jour engage la responsabilité pénale du dirigeant.',
+    CURRENT_DATE, 'System', true
   ),
   (
     'securite_privee',
@@ -82,5 +185,53 @@ VALUES
     12,
     'site',
     'pdf',
-    '{30,7}'
+    '{30,7}',
+    'Vérification par les organismes de contrôle agréés et maintien des visas dans le registre.',
+    'Extraits du registre ou attestation de passage',
+    'Commissions de sécurité / Organismes agréés',
+    'https://www.interieur.gouv.fr',
+    'Code de la construction et de l''habitation',
+    'Bonjour,\n\nLa conformité du registre de sécurité du site arrive à échéance le {due_date}.',
+    2,
+    'Documents site',
+    'Consigné sur place, ce registre retrace l''ensemble des contrôles techniques et des formations incendie du personnel.',
+    CURRENT_DATE, 'System', true
+  ),
+  (
+    'securite_privee',
+    'Registre du personnel',
+    'Document obligatoire listant tous les salariés employés sur le site ou dans l''entreprise.',
+    12,
+    'site',
+    'pdf',
+    '{30}',
+    'Mise à jour continue à chaque embauche ou départ.',
+    'Extrait du registre unique du personnel',
+    'Inspection du travail',
+    'https://www.service-public.fr',
+    'Code du travail (Art. L1221-13)',
+    'Bonjour,\n\nVeuillez vérifier la mise à jour du registre du personnel du site avant le {due_date}.',
+    3,
+    'Documents site',
+    'Doit être présenté immédiatement en cas de contrôle de l''inspection du travail ou de l''URSSAF.',
+    CURRENT_DATE, 'System', true
+  ),
+  (
+    'securite_privee',
+    'Affichages obligatoires par site',
+    'Panneaux d''affichage incluant consignes de sécurité, inspection du travail, numéros d''urgence.',
+    12,
+    'site',
+    'pdf',
+    '{30}',
+    'Vérification annuelle de la présence et de la lisibilité des affichages.',
+    'Photo des panneaux d''affichage ou attestation sur l''honneur',
+    'Inspection du travail',
+    'https://www.service-public.fr',
+    'Code du travail',
+    'Bonjour,\n\nUne vérification des affichages obligatoires du site est recommandée d''ici le {due_date}.',
+    4,
+    'Documents site',
+    'Le défaut d''affichage des consignes de sécurité et des numéros d''urgence est passible d''une amende.',
+    CURRENT_DATE, 'System', true
   );
