@@ -66,44 +66,25 @@
 
 ---
 
-### Phase R1 — Modèle de données enrichi (migration SQL)
+### Phase R1 — Modèle de données enrichi (migration SQL ✅)
 
 > Aujourd'hui `obligation_templates` contient 9 colonnes. Il faut l'enrichir pour porter
 > toute la connaissance métier qui rend le produit vertical.
 
-- [x] **Nouveaux champs sur `obligation_templates`** :
-  - `renewal_process` (text) : comment renouveler, étapes concrètes. Ex: "Dossier à déposer sur le portail CNAPS, délai de traitement 6-8 semaines"
-  - `required_documents` (text) : pièces requises pour le renouvellement. Ex: "Formulaire cerfa, photo identité, justificatif domicile"
-  - `competent_authority` (text) : organisme compétent. Ex: "CNAPS", "PMI du département", "Organisme de formation agréé"
-  - `official_url` (text) : lien officiel vers le portail ou le texte de loi
-  - `legal_reference` (text) : référence du texte de loi. Ex: "Livre VI du Code de la sécurité intérieure, Art. L612-20"
-  - `alert_message_template` (text) : template du corps de l'alerte email, avec variables `{employee_name}`, `{due_date}`, `{renewal_process}`, etc.
-  - `inspection_order` (integer) : ordre d'apparition dans l'export audit (l'inspecteur regarde ça dans cet ordre)
-  - `inspection_section` (text) : section de regroupement dans l'export audit. Ex: "Habilitations agents", "Documents entreprise"
-  - `help_text` (text) : bloc d'aide contextuelle affiché sur la fiche obligation dans le SaaS client
-  - `last_verified_at` (date) : date de la dernière vérification manuelle
-  - `verified_by` (text) : qui a vérifié (toi, un juriste, etc.)
-  - `active` (boolean, default true) : désactiver une obligation obsolète sans la supprimer
+- [x] **Nouveaux champs sur `obligation_templates`** (12 colonnes : renewal_process, help_text, etc.)
 - [x] **Migration SQL** : `002_enrich_obligation_templates.sql`
-- [x] **Mettre à jour le seed sécurité privée** avec les nouvelles colonnes remplies pour les 9 obligations existantes
+- [x] **Méthode rigoureuse** : `003_guard_obligation_templates_upsert.sql` (unique constraint + index)
 
 ---
 
-### Phase R2 — Seed complet sécurité privée
+### Phase R2 — Seed complet sécurité privée (Synchronisé ✅)
 
 > Remplir la base avec la vraie connaissance métier, pas juste des noms d'obligations.
+> **Status** : Synchronisé via `seed_securite_privee_upsert.sql`
 
-- [x] **Carte professionnelle CNAPS** :
-  - `renewal_process` : "Dépôt du dossier sur le portail CNAPS 8 semaines avant expiration. Délai de traitement : 6-8 semaines."
-  - `required_documents` : "Formulaire de renouvellement, photo identité récente, justificatif de domicile, attestation d'aptitude professionnelle"
-  - `competent_authority` : "CNAPS — Conseil National des Activités Privées de Sécurité"
-  - `official_url` : "https://www.cnaps.interieur.gouv.fr"
-  - `legal_reference` : "Livre VI du CSI, Art. L612-20"
-  - `help_text` : "La carte CNAPS est obligatoire pour tout agent de sécurité. Sans carte valide, l'agent ne peut pas travailler. Le délai de traitement est long (6-8 semaines), anticipez."
-  - `inspection_order` : 1
-  - `inspection_section` : "Habilitations agents"
-- [x] **Compléter de même pour les 8 autres obligations** (SST, SSIAP, habilitation élec, recyclage, autorisation préfectorale, RC Pro, DUERP, registre sécurité)
-- [x] **Ajouter les obligations manquantes** (identifiées lors des entretiens prospects) :
+- [x] **Carte professionnelle CNAPS** (Enrichie)
+- [x] **Compléter les 8 obligations existantes** (SST, SSIAP, RC Pro, etc.)
+- [x] **Ajouter les obligations manquantes** :
   - Visite médicale du travail (aptitude)
   - Registre du personnel
   - Affichages obligatoires par site
@@ -168,6 +149,35 @@
 - [x] Pages existantes : dashboard, sites, sites/[id], employees, employees/[id], employees/new, sites/new, obligations/[id]/upload
 - [x] Landing page sécurité privée (`/landing`)
 - [x] Cron routes squelette (`send-alerts`, `update-statuses`)
+
+### Audit navigateur — écarts constatés (avril 2026)
+
+> Parcours manuel connecté : `/dashboard`, `/sites`, `/employees`, `/sites/new`, `/employees/new`, `/landing`. Objectif : noter ce qui manque ou grince dans l’UI actuelle par rapport à la vision produit (sans doublon inutile avec les phases ci-dessous — renvois indiqués).
+
+#### Correctifs rapides (copy / accessibilité)
+
+- [ ] **Pluriels français sur les listes Sites et Employés** : le pattern `site` + `s` / `enregistré` + `s` fragmente le texte pour l’accessibilité (« 0 site s enregistré s », « 0 employé s actif s ») et reste maladroit à l’oral. Préférer des phrases complètes par cas (0 / 1 / n), par ex. « Aucun site enregistré », « 1 site enregistré », « N sites enregistrés » (idem employés actifs). Fichiers : `src/app/(app)/sites/page.tsx`, `src/app/(app)/employees/page.tsx`.
+
+#### Navigation et pages absentes dans la sidebar
+
+- [ ] **Pas de lien vers une vue globale des obligations** (`/obligations` ou équivalent) — prévu Phase 2.2 (tableau filtrable).
+- [ ] **Pas de `/settings`** (organisation, compte, postes métier) — prévu Phases 1.4 et 4.
+- [ ] **Pas de page `/legal`** (CGU, confidentialité, RGPD) — prévu Phase 9 ; la landing n’expose que des `mailto:` pour « Contact » / pied de page.
+
+#### Écart promesse marketing ↔ produit actuel
+
+- [ ] **Dashboard « vert / orange / rouge »** : la landing (`/landing`) promet une vue siège code couleur par site ; le dashboard actuel affiche des cartes de compteurs et un bloc « Statut par site », mais pas encore la grille dense ni les filtres décrits Phase 2.2 — à aligner lors de la refonte dashboard.
+
+#### Comportements vérifiés OK
+
+- [x] **Employé sans site** : `/employees/new` affiche « Aucun site disponible », lien « Créer un site », bouton de soumission désactivé tant qu’il n’y a pas de site — parcours cohérent.
+- [x] **Landing** : vocabulaire secteur (CNAPS, SSIAP, SST, RC Pro, inspection) présent — la Phase 7 « audit contenu landing » reste utile pour la finesse, mais le socle est là.
+
+#### Rappels (déjà listés ailleurs dans cette CHECKLIST)
+
+- Phase **1.3** : écran bienvenue post-signup, aide contextuelle métier sur les obligations (`help_text`, procédures, lien officiel), CTA upload visible sur `missing`/`expired`, affichage « jours restants », vue obligations **organisation** au dashboard.
+- Phase **2.1** : moteur d’écart / scores / cron `update-statuses` réellement branchés sur les transitions de statut.
+- Phase **3** : alertes email (Resend) encore à brancher.
 
 ---
 
@@ -373,7 +383,7 @@
 > L'upload depuis le terrain (téléphone) est critique pour l'adoption des responsables de site.
 
 - [ ] Tester l'upload depuis iPhone et Android
-- [ ] `capture="environment"` sur l'input file (ouvre directement l'appareil photo)
+- [ ] `capture="environment"` on the input file (ouvre directement l'appareil photo)
 - [ ] Responsive : tableaux sur petit écran (stacking ou scroll horizontal)
 - [ ] **Compression d'image** : compresser côté client avant upload (photos téléphone = 5–10 Mo)
 - [ ] **PWA minimale** : `manifest.json` + service worker basique pour l'icône d'accueil
@@ -541,8 +551,8 @@ Alerte interne back-office → validation humaine obligatoire
 
 **Base de connaissances :** fondation de tout le reste
 
-1. **Phase R1** — enrichir le modèle de données (migration SQL)
-2. **Phase R2** — seed complet sécurité privée (tous les champs remplis)
+1. **Phase R1** — ✅ enrichir le modèle de données (migration SQL)
+2. **Phase R2** — ✅ seed complet sécurité privée (tous les champs remplis)
 
 **Produit A :** ce qui suffit pour une démo + un usage réel
 
