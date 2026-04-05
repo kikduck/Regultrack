@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
 import { StatusDot } from "@/components/status-badge";
 import type { ObligationStatus } from "@/lib/types/database";
+import { sitesEnregistresLabel, employesAuSiteLabel } from "@/lib/format-fr";
 
 export default async function SitesPage() {
   const supabase = await createClient();
@@ -49,8 +50,7 @@ export default async function SitesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Sites</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {sites.length} site{sites.length !== 1 ? "s" : ""} enregistré
-            {sites.length !== 1 ? "s" : ""}
+            {sitesEnregistresLabel(sites.length)}
           </p>
         </div>
         <Link
@@ -98,7 +98,7 @@ export default async function SitesPage() {
                       {site.address || "Pas d'adresse"}
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
-                      {empCount} employé{empCount !== 1 ? "s" : ""}
+                      {employesAuSiteLabel(empCount)}
                     </p>
                   </div>
                 </div>

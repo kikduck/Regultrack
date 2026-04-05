@@ -156,7 +156,7 @@
 
 #### Correctifs rapides (copy / accessibilité)
 
-- [ ] **Pluriels français sur les listes Sites et Employés** : le pattern `site` + `s` / `enregistré` + `s` fragmente le texte pour l’accessibilité (« 0 site s enregistré s », « 0 employé s actif s ») et reste maladroit à l’oral. Préférer des phrases complètes par cas (0 / 1 / n), par ex. « Aucun site enregistré », « 1 site enregistré », « N sites enregistrés » (idem employés actifs). Fichiers : `src/app/(app)/sites/page.tsx`, `src/app/(app)/employees/page.tsx`.
+- [x] **Pluriels français sur les listes Sites et Employés** : libellés complets via src/lib/format-fr.ts (sites enregistrés, employés actifs, employés par carte site). Fichiers : sites/page.tsx, employees/page.tsx.
 
 #### Navigation et pages absentes dans la sidebar
 
@@ -230,8 +230,8 @@
 
 - [ ] **Score de conformité par site** : calculer % d'obligations `valid` / total obligations (sites + employés du site)
 - [ ] **Score de conformité global** : même chose au niveau organisation
-- [ ] **Cron `update-statuses`** : recalculer chaque nuit les statuts (`valid` → `expiring_soon` si J-90 selon `alert_days`, `expiring_soon` → `expired` si `due_date` passée, rester `missing` si aucune preuve)
-- [ ] **Tests unitaires moteur d'écart** : vérifier les transitions de statut sur des cas limites
+- [x] **Cron `update-statuses`** : recalcule chaque nuit selon `due_date` et `max(alert_days)` du template (`obligation-status.ts` partagé avec l’upload preuve) ; les lignes `missing` ne sont pas recalculées (pas de preuve / pas d’échéance fiable côté produit)
+- [ ] **Tests unitaires moteur d'écart** : vérifier les transitions de statut sur des cas limites (cible prioritaire : `obligation-status.ts`)
 
 #### 2.2 — Vue siège consolidée
 

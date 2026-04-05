@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Site } from "@/lib/types/database";
+import { resolveOrgSector } from "@/lib/profile-org";
 
 export default function NewEmployeePage() {
   const [fullName, setFullName] = useState("");
@@ -99,11 +100,11 @@ export default function NewEmployeePage() {
     }
 
     // Auto-create obligations based on templates for this sector
-    const sector = (profile.organizations as { sector: string } | null)?.sector || "securite_privee";
+    const sectorResolved = resolveOrgSector(profile.organizations);
     const { data: templates } = await supabase
       .from("obligation_templates")
       .select("*")
-      .eq("sector", sector)
+      .eq("sector", sectorResolved)
       .eq("applies_to", "employee");
 
     if (templates && templates.length > 0) {

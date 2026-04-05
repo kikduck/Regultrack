@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { resolveOrgSector } from "@/lib/profile-org";
 
 export default function NewSitePage() {
   const [name, setName] = useState("");
@@ -55,7 +56,7 @@ export default function NewSitePage() {
     }
 
     // Auto-create obligations for site
-    const sector = (profile.organizations as { sector: string } | null)?.sector || "securite_privee";
+    const sector = resolveOrgSector(profile.organizations);
     const { data: templates } = await supabase
       .from("obligation_templates")
       .select("*")

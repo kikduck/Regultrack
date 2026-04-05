@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Users, Plus } from "lucide-react";
 import { StatusDot } from "@/components/status-badge";
 import type { ObligationStatus } from "@/lib/types/database";
+import { employesActifsLabel } from "@/lib/format-fr";
 
 export default async function EmployeesPage() {
   const supabase = await createClient();
@@ -55,8 +56,7 @@ export default async function EmployeesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Employés</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {employees.length} employé{employees.length !== 1 ? "s" : ""} actif
-            {employees.length !== 1 ? "s" : ""}
+            {employesActifsLabel(employees.length)}
           </p>
         </div>
         <Link

@@ -3,8 +3,8 @@
 import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeft, Upload, FileText, X } from "lucide-react";
+import { statusFromDueDateAndAlerts } from "@/lib/obligation-status";
 
 export default function UploadProofPage() {
   const { id: obligationId } = useParams<{ id: string }>();
@@ -68,20 +68,27 @@ export default function UploadProofPage() {
       return;
     }
 
-    // Update obligation status based on valid_until date
+    const { data: obligationRow } = await supabase
+      .from("obligations")
+      .select("obligation_templates(alert_days)")
+      .eq("id", obligationId)
+      .single();
+
+    const template = obligationRow?.obligation_templates as unknown as {
+      alert_days: number[];
+    } | null;
+
     const updateData: { status: string; due_date?: string } = {
       status: "valid",
     };
     if (validUntil) {
       updateData.due_date = validUntil;
-      const daysUntil = Math.ceil(
-        (new Date(validUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      const todayIso = new Date().toISOString().split("T")[0];
+      updateData.status = statusFromDueDateAndAlerts(
+        validUntil,
+        template?.alert_days,
+        todayIso
       );
-      if (daysUntil <= 0) {
-        updateData.status = "expired";
-      } else if (daysUntil <= 30) {
-        updateData.status = "expiring_soon";
-      }
     }
 
     await supabase
