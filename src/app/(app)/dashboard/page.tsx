@@ -8,7 +8,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
-import { StatusDot } from "@/components/status-badge";
+import { StatusDot, StatusBadge } from "@/components/status-badge";
+import { ObligationCard } from "@/components/obligation-card";
 import Link from "next/link";
 import type { ObligationStatus } from "@/lib/types/database";
 
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
     .single();
 
   if (!profile?.org_id) {
-    redirect("/signup");
+    redirect("/setup");
   }
 
   const orgId = profile.org_id;
@@ -37,13 +38,16 @@ export default async function DashboardPage() {
     supabase.from("employees").select("*").eq("org_id", orgId).eq("active", true),
     supabase
       .from("obligations")
-      .select("*, sites(name), employees(full_name), obligation_templates(name)")
+      .select("*, sites(name), employees(full_name), obligation_templates(*), proofs(*)")
       .eq("org_id", orgId),
   ]);
 
   const sites = sitesResult.data || [];
   const employees = employeesResult.data || [];
   const obligations = obligationsResult.data || [];
+
+  const orgObligations = obligations.filter(o => (o.obligation_templates as any)?.applies_to === 'organization');
+  const otherObligations = obligations.filter(o => (o.obligation_templates as any)?.applies_to !== 'organization');
 
   const validCount = obligations.filter((o) => o.status === "valid").length;
   const expiringCount = obligations.filter(
@@ -111,6 +115,37 @@ export default async function DashboardPage() {
           variant="danger"
         />
       </div>
+
+      {/* Organization Obligations */}
+      {orgObligations.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-gray-400" />
+            Obligations de l&apos;entreprise
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {orgObligations.map((o) => (
+              <div key={o.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{(o.obligation_templates as any)?.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <StatusBadge status={o.status as ObligationStatus} />
+                    {o.due_date && (
+                      <span className="text-[10px] text-gray-500">Échéance : {new Date(o.due_date).toLocaleDateString("fr-FR")}</span>
+                    )}
+                  </div>
+                </div>
+                <Link 
+                  href={`/obligations/${o.id}/upload`}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  Gérer
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sites overview */}

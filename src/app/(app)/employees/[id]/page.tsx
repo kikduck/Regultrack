@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { EmployeeActions } from "@/components/employee-actions";
+import { ObligationCard } from "@/components/obligation-card";
 import type { ObligationStatus } from "@/lib/types/database";
 
 interface PageProps {
@@ -29,7 +30,7 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
 
   const { data: obligations } = await supabase
     .from("obligations")
-    .select("*, obligation_templates(name, description, renewal_months, proof_type), proofs(*)")
+    .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, proof_type), proofs(*)")
     .eq("employee_id", id)
     .order("created_at");
 
@@ -69,80 +70,10 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
           Aucune obligation rattachée à cet employé.
         </div>
       ) : (
-        <div className="space-y-4">
-          {obligationsList.map((obligation) => {
-            const template = obligation.obligation_templates as {
-              name: string;
-              description: string;
-              renewal_months: number;
-              proof_type: string;
-            } | null;
-            const proofs = (obligation.proofs || []) as {
-              id: string;
-              file_name: string;
-              file_url: string;
-              valid_until: string | null;
-              uploaded_at: string;
-            }[];
-
-            return (
-              <div
-                key={obligation.id}
-                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {template?.name}
-                    </p>
-                    {template?.description && (
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {template.description}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">
-                      Renouvellement : tous les {template?.renewal_months} mois
-                    </p>
-                  </div>
-                  <StatusBadge status={obligation.status as ObligationStatus} />
-                </div>
-
-                {obligation.due_date && (
-                  <p className="text-xs text-gray-500 mb-3">
-                    Échéance :{" "}
-                    <span className="font-medium">
-                      {new Date(obligation.due_date).toLocaleDateString("fr-FR")}
-                    </span>
-                  </p>
-                )}
-
-                {proofs.length > 0 && (
-                  <div className="mb-3 space-y-1">
-                    {proofs.map((proof) => (
-                      <a
-                        key={proof.id}
-                        href={proof.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-xs text-primary hover:underline"
-                      >
-                        {proof.file_name} — uploadé le{" "}
-                        {new Date(proof.uploaded_at).toLocaleDateString("fr-FR")}
-                      </a>
-                    ))}
-                  </div>
-                )}
-
-                <Link
-                  href={`/obligations/${obligation.id}/upload`}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary-dark"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  Ajouter une preuve
-                </Link>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 gap-6">
+          {obligationsList.map((obligation) => (
+            <ObligationCard key={obligation.id} obligation={obligation as any} />
+          ))}
         </div>
       )}
     </div>

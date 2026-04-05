@@ -42,20 +42,7 @@ export default function SignupPage() {
       return;
     }
 
-    const setupRes = await fetch("/api/auth/setup-org", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orgName, fullName }),
-    });
-
-    if (!setupRes.ok) {
-      const body = await setupRes.json().catch(() => ({}));
-      setError(body.error || "Erreur lors de la création de l'organisation.");
-      setLoading(false);
-      return;
-    }
-
-    router.push("/dashboard");
+    router.push("/setup");
   }
 
   return (

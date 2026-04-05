@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { SiteActions } from "@/components/site-actions";
+import { ObligationCard } from "@/components/obligation-card";
 import type { ObligationStatus } from "@/lib/types/database";
 
 interface PageProps {
@@ -36,7 +37,7 @@ export default async function SiteDetailPage({ params }: PageProps) {
       .order("full_name"),
     supabase
       .from("obligations")
-      .select("*, obligation_templates(name, applies_to), employees(full_name)")
+      .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, applies_to), employees(full_name), proofs(*)")
       .eq("site_id", id),
   ]);
 
@@ -88,25 +89,13 @@ export default async function SiteDetailPage({ params }: PageProps) {
 
       {/* Site-level obligations */}
       {siteObligations.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+        <div className="mb-12">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Obligations du site
           </h2>
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm divide-y divide-gray-50">
+          <div className="grid grid-cols-1 gap-6">
             {siteObligations.map((o) => (
-              <div key={o.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {(o.obligation_templates as { name: string } | null)?.name}
-                  </p>
-                  {o.due_date && (
-                    <p className="text-xs text-gray-500">
-                      Échéance : {new Date(o.due_date).toLocaleDateString("fr-FR")}
-                    </p>
-                  )}
-                </div>
-                <StatusBadge status={o.status as ObligationStatus} />
-              </div>
+              <ObligationCard key={o.id} obligation={o as any} />
             ))}
           </div>
         </div>

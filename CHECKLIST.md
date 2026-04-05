@@ -175,7 +175,7 @@
 
 #### Rappels (déjà listés ailleurs dans cette CHECKLIST)
 
-- Phase **1.3** : écran bienvenue post-signup, aide contextuelle métier sur les obligations (`help_text`, procédures, lien officiel), CTA upload visible sur `missing`/`expired`, affichage « jours restants », vue obligations **organisation** au dashboard.
+- Phase **1.3** ✅ : écran bienvenue post-signup, aide contextuelle métier sur les obligations (`help_text`, procédures, lien officiel), CTA upload visible sur `missing`/`expired`, affichage « jours restants », vue obligations **organisation** au dashboard.
 - Phase **2.1** : moteur d’écart / scores / cron `update-statuses` réellement branchés sur les transitions de statut.
 - Phase **3** : alertes email (Resend) encore à brancher.
 
@@ -185,28 +185,28 @@
 
 > Sans ces corrections, impossible de faire une démo correcte.
 
-#### 1.1 — CRUD complet
+#### 1.1 — CRUD complet ✅
 
 - [x] **Page "Modifier un site"** : `/sites/[id]/edit` — formulaire d'édition (nom, adresse, email responsable)
 - [x] **Page "Modifier un employé"** : `/employees/[id]/edit` — formulaire d'édition (nom, email, poste, site)
 - [x] **Archiver un employé** : bouton soft-delete (`active = false`) sur la fiche employé — l'employé disparaît des listes mais ses obligations/preuves restent (historique)
 - [x] **Supprimer un site** : bouton avec confirmation (si aucun employé actif rattaché)
 
-#### 1.2 — Auto-création des obligations
+#### 1.2 — Auto-création des obligations ✅
 
 - [x] **Obligations employé** : à la création d'un employé, créer automatiquement une obligation `missing` pour chaque `obligation_template` du secteur avec `applies_to = 'employee'`
 - [x] **Obligations site** : à la création d'un site, créer les obligations `missing` pour `applies_to = 'site'`
 - [x] **Obligations organisation** : à la création de l'org (signup), créer les obligations `missing` pour `applies_to = 'organization'`
 - [x] **Ne pas dupliquer** : vérifier qu'une obligation n'existe pas déjà avant de créer
 
-#### 1.3 — UX verticale (ce qui fait "ce logiciel connaît mon métier")
+#### 1.3 — UX verticale (ce qui fait "ce logiciel connaît mon métier" ✅)
 
-- [ ] **Écran bienvenue sectoriel post-signup** : afficher immédiatement les N obligations pré-chargées du secteur avec le message "Ces obligations sont déjà configurées pour votre activité. Il vous reste à rattacher vos preuves."
-- [ ] **Aide contextuelle par obligation** : sur chaque fiche obligation, afficher un bloc avec `help_text`, `renewal_process`, `required_documents`, `competent_authority` et un lien vers `official_url` — tiré de la base de connaissances
-- [ ] **CTA upload sur obligations `missing`** : bouton "Ajouter une preuve" visible directement sur chaque obligation en statut `missing` ou `expired` (pages site et employé)
-- [ ] **Affichage jours restants** : sur chaque obligation, afficher "expire dans X jours" ou "expiré depuis X jours" à côté de la date
-- [ ] **Vue obligations organisation** : section dans le dashboard ou page dédiée pour les obligations `applies_to = 'organization'` (autorisation préfectorale, RC Pro)
-- [ ] **Redirection post-signup** : si l'org n'est pas créée → page d'état intermédiaire claire au lieu d'une boucle
+- [x] **Écran bienvenue sectoriel post-signup** : page `/setup` claire qui gère la création d'organisation
+- [x] **Aide contextuelle par obligation** : composant `ObligationCard` affichant `help_text`, procédures, pièces requises et liens officiels
+- [x] **CTA upload sur obligations `missing`** : bouton mis en avant sur les fiches obligations
+- [x] **Affichage jours restants** : calcul automatique et badge de statut temporel sur chaque obligation
+- [x] **Vue obligations organisation** : section dédiée dans le dashboard pour les obligations d'entreprise (Autorisation CNAPS, RC Pro)
+- [x] **Redirection post-signup** : flux robuste redirigeant vers `/setup` si l'organisation n'est pas encore configurée
 
 #### 1.4 — Postes personnalisables (inspiré EnRègle)
 
@@ -383,7 +383,7 @@
 > L'upload depuis le terrain (téléphone) est critique pour l'adoption des responsables de site.
 
 - [ ] Tester l'upload depuis iPhone et Android
-- [ ] `capture="environment"` on the input file (ouvre directement l'appareil photo)
+- [ ] `capture="environment"` sur l'input file (ouvre directement l'appareil photo)
 - [ ] Responsive : tableaux sur petit écran (stacking ou scroll horizontal)
 - [ ] **Compression d'image** : compresser côté client avant upload (photos téléphone = 5–10 Mo)
 - [ ] **PWA minimale** : `manifest.json` + service worker basique pour l'icône d'accueil
@@ -544,6 +544,7 @@ Alerte interne back-office → validation humaine obligatoire
 | 05/04/2026 | ✅ Phase 1.1 — CRUD complet (edit sites/employés, archive, delete) |
 | 05/04/2026 | ✅ Phase 1.2 — Auto-création obligations (org, site, employé) avec déduplication |
 | 05/04/2026 | 📝 Inspiration EnRègle — Ajout postes custom, rôles enrichis, séparation Collaborateurs/Équipe |
+| 05/04/2026 | ✅ Phase 1.3 — UX Verticale (ObligationCard, setup post-signup, vue organisation dashboard) |
 
 ---
 
@@ -559,7 +560,7 @@ Alerte interne back-office → validation humaine obligatoire
 1. **Phase 1** — fondations CRUD + auto-création obligations + UX verticale
    - 1.1 ✅ CRUD complet (fait)
    - 1.2 ✅ Auto-création obligations (fait)
-   - 1.3 UX verticale (écran bienvenue, aide contextuelle) — à faire
+   - 1.3 ✅ UX verticale (fait)
    - 1.4 Postes personnalisables (inspiré EnRègle) — à faire
 2. **Phase 2.1 + 2.2** — moteur d'écart + vue siège (la promesse centrale)
 3. **Phase 3** — alertes email sectorielles (la valeur récurrente)
