@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  ClipboardList,
   Shield,
   LogOut,
   ChevronLeft,
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/sites", label: "Sites", icon: Building2 },
   { href: "/employees", label: "Employés", icon: Users },
+  { href: "/obligations", label: "Obligations", icon: ClipboardList },
 ];
 
 export function Sidebar({

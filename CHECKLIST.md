@@ -228,17 +228,17 @@
 
 #### 2.1 — Moteur d'écart
 
-- [ ] **Score de conformité par site** : calculer % d'obligations `valid` / total obligations (sites + employés du site)
-- [ ] **Score de conformité global** : même chose au niveau organisation
+- [x] **Score de conformité par site** : compliance-score.ts — computeSiteScore() retourne score %, worstStatus et compteurs ; affiché sur chaque carte site dans le dashboard.
+- [x] **Score de conformité global** : score org affiché en grand dans le header du dashboard (même lib).
 - [x] **Cron `update-statuses`** : recalcule chaque nuit selon `due_date` et `max(alert_days)` du template (`obligation-status.ts` partagé avec l’upload preuve) ; les lignes `missing` ne sont pas recalculées (pas de preuve / pas d’échéance fiable côté produit)
 - [ ] **Tests unitaires moteur d'écart** : vérifier les transitions de statut sur des cas limites (cible prioritaire : `obligation-status.ts`)
 
 #### 2.2 — Vue siège consolidée
 
-- [ ] **Dashboard refondu** : grille de sites avec code couleur (vert / orange / rouge) basé sur le pire statut du site
+- [x] **Dashboard refondu** : grille de sites avec bordure gauche colorée (rouge/orange/vert) selon pire statut + score % par site + mini-compteurs. Fix « Tout est en règle » → « Aucune échéance urgente ».
 - [ ] **Filtres dashboard** : par statut (rouge uniquement), par type d'obligation, recherche par nom de site
-- [ ] **Compteur par catégorie par site** : X en règle / Y expire bientôt / Z expiré — visible au survol ou en sous-ligne
-- [ ] **Vue "toutes les obligations"** : page `/obligations` avec tableau filtrable (par site, par employé, par statut, par type)
+- [x] **Compteur par catégorie par site** : ✓ valid / ⚠ expiring / ✕ expired / ? missing visible directement sur chaque carte de site.
+- [x] **Vue « toutes les obligations »** : page \/obligations\ avec tableau filtrable par statut (onglets pills + compteurs) + tri urgence. Lien dans la sidebar.
 
 #### 2.3 — Historique et versioning des preuves
 
@@ -545,6 +545,7 @@ Alerte interne back-office → validation humaine obligatoire
 | 05/04/2026 | ✅ Phase 1.2 — Auto-création obligations (org, site, employé) avec déduplication |
 | 05/04/2026 | 📝 Inspiration EnRègle — Ajout postes custom, rôles enrichis, séparation Collaborateurs/Équipe |
 | 05/04/2026 | ✅ Phase 1.3 — UX Verticale (ObligationCard, setup post-signup, vue organisation dashboard) |
+| 05/04/2026 | ✅ Phase 2.1/2.2 — Score conformité (compliance-score.ts), dashboard refondu grille couleur, page /obligations tableau filtrable, sidebar Obligations |
 
 ---
 
