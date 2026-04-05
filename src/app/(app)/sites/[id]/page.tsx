@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
+import { SiteActions } from "@/components/site-actions";
 import type { ObligationStatus } from "@/lib/types/database";
 
 interface PageProps {
@@ -73,13 +74,16 @@ export default async function SiteDetailPage({ params }: PageProps) {
             </p>
           )}
         </div>
-        <Link
-          href={`/employees/new?site_id=${id}`}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter un employé
-        </Link>
+        <div className="flex items-center gap-3">
+          <SiteActions siteId={id} employeesCount={employees.length} />
+          <Link
+            href={`/employees/new?site_id=${id}`}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter un employé
+          </Link>
+        </div>
       </div>
 
       {/* Site-level obligations */}

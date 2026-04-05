@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
+import { EmployeeActions } from "@/components/employee-actions";
 import type { ObligationStatus } from "@/lib/types/database";
 
 interface PageProps {
@@ -44,16 +45,19 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
         Retour aux employés
       </Link>
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {employee.full_name}
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {employee.job_title} · {(employee.sites as { name: string } | null)?.name}
-        </p>
-        {employee.email && (
-          <p className="text-sm text-gray-400">{employee.email}</p>
-        )}
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {employee.full_name}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {employee.job_title} · {(employee.sites as { name: string } | null)?.name}
+          </p>
+          {employee.email && (
+            <p className="text-sm text-gray-400">{employee.email}</p>
+          )}
+        </div>
+        <EmployeeActions employeeId={id} />
       </div>
 
       <h2 className="text-lg font-semibold text-gray-900 mb-4">

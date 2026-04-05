@@ -42,22 +42,18 @@ export default function SignupPage() {
       return;
     }
 
-    const { data: org, error: orgError } = await supabase
-      .from("organizations")
-      .insert({ name: orgName, sector: "securite_privee" })
-      .select()
-      .single();
+    const setupRes = await fetch("/api/auth/setup-org", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orgName, fullName }),
+    });
 
-    if (orgError || !org) {
-      setError("Compte créé mais erreur lors de la création de l'organisation.");
+    if (!setupRes.ok) {
+      const body = await setupRes.json().catch(() => ({}));
+      setError(body.error || "Erreur lors de la création de l'organisation.");
       setLoading(false);
       return;
     }
-
-    await supabase
-      .from("profiles")
-      .update({ org_id: org.id, full_name: fullName })
-      .eq("id", authData.user.id);
 
     router.push("/dashboard");
   }

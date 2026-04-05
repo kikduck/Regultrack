@@ -1,0 +1,58 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: regultrack-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "ps"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  searxng:
+    image: searxng/searxng
+    container_name: regultrack-searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng-settings.yml:/etc/searxng/settings.yml:ro
+    restart: unless-stopped
+
+  local-deep-research:
+    image: localdeepresearch/local-deep-research
+    container_name: regultrack-ldr
+    network_mode: host
+    environment:
+      - LDR_LLM_PROVIDER=ollama
+      - LDR_LLM_OLLAMA_URL=http://localhost:11434
+      - LDR_LLM_MODEL=gemma4:26b
+      - LDR_SEARCH_TOOL=searxng
+      - LDR_SEARXNG_URL=http://localhost:8080
+      - LDR_DATA_DIR=/data
+      - LDR_BOOTSTRAP_ALLOW_UNENCRYPTED=true
+    volumes:
+      - ldr-data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+      searxng:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  ollama-data:
+  ldr-data:

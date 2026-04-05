@@ -1,0 +1,7 @@
+{"sessionId":"4280cc","location":"signup/page.tsx:25","message":"signUp called","data":{"email":"kilianmatignon@gmail.com","loadingState":true},"timestamp":1775339307393,"hypothesisId":"H-A-H-D"}
+{"sessionId":"4280cc","location":"signup/page.tsx:35","message":"signUp response","data":{"hasUser":false,"errorCode":429,"errorMsg":"email rate limit exceeded"},"timestamp":1775339307832,"hypothesisId":"H-B"}
+{"sessionId":"4280cc","location":"signup/page.tsx:45","message":"before org insert","data":{"userId":"ddd3397b-4897-41db-9188-69b2aa6b5e54","hasSession":true,"sessionRole":"authenticated"},"timestamp":1775340190249,"hypothesisId":"A-B"}
+{"sessionId":"4280cc","location":"signup/page.tsx:53","message":"after org insert","data":{"errorCode":"42501","errorMessage":"new row violates row-level security policy for table \"organizations\"","errorDetails":null,"errorHint":null},"timestamp":1775340190536,"hypothesisId":"A-B"}
+{"sessionId":"4280cc","location":"api/auth/setup-org/route.ts:7","message":"setup-org called","data":{},"timestamp":1775340349979,"hypothesisId":"A"}
+{"sessionId":"4280cc","location":"api/auth/setup-org/route.ts:23","message":"creating org as admin","data":{"userId":"19e4c344-60bf-4d80-9d3a-aaaf63cd1e82","orgName":"TEST"},"timestamp":1775340350074,"hypothesisId":"A"}
+{"sessionId":"4280cc","location":"api/auth/setup-org/route.ts:44","message":"setup complete","data":{"orgId":"2437e542-0563-49b2-a2d5-10ee2b69eb98","profileError":null},"timestamp":1775340350457,"hypothesisId":"A"}

@@ -173,17 +173,17 @@
 
 #### 1.1 — CRUD complet
 
-- [ ] **Page "Modifier un site"** : `/sites/[id]/edit` — formulaire d'édition (nom, adresse, email responsable)
-- [ ] **Page "Modifier un employé"** : `/employees/[id]/edit` — formulaire d'édition (nom, email, poste, site)
-- [ ] **Archiver un employé** : bouton soft-delete (`active = false`) sur la fiche employé — l'employé disparaît des listes mais ses obligations/preuves restent (historique)
-- [ ] **Supprimer un site** : bouton avec confirmation (si aucun employé actif rattaché)
+- [x] **Page "Modifier un site"** : `/sites/[id]/edit` — formulaire d'édition (nom, adresse, email responsable)
+- [x] **Page "Modifier un employé"** : `/employees/[id]/edit` — formulaire d'édition (nom, email, poste, site)
+- [x] **Archiver un employé** : bouton soft-delete (`active = false`) sur la fiche employé — l'employé disparaît des listes mais ses obligations/preuves restent (historique)
+- [x] **Supprimer un site** : bouton avec confirmation (si aucun employé actif rattaché)
 
 #### 1.2 — Auto-création des obligations
 
-- [ ] **Obligations employé** : à la création d'un employé, créer automatiquement une obligation `missing` pour chaque `obligation_template` du secteur avec `applies_to = 'employee'`
-- [ ] **Obligations site** : à la création d'un site, créer les obligations `missing` pour `applies_to = 'site'`
-- [ ] **Obligations organisation** : à la création de l'org (signup), créer les obligations `missing` pour `applies_to = 'organization'`
-- [ ] **Ne pas dupliquer** : vérifier qu'une obligation n'existe pas déjà avant de créer
+- [x] **Obligations employé** : à la création d'un employé, créer automatiquement une obligation `missing` pour chaque `obligation_template` du secteur avec `applies_to = 'employee'`
+- [x] **Obligations site** : à la création d'un site, créer les obligations `missing` pour `applies_to = 'site'`
+- [x] **Obligations organisation** : à la création de l'org (signup), créer les obligations `missing` pour `applies_to = 'organization'`
+- [x] **Ne pas dupliquer** : vérifier qu'une obligation n'existe pas déjà avant de créer
 
 #### 1.3 — UX verticale (ce qui fait "ce logiciel connaît mon métier")
 
