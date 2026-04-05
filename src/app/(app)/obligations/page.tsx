@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
+import { ObligationsColumnFilters } from "@/components/obligations-column-filters";
 import { countsByStatus } from "@/lib/compliance-score";
+import { buildObligationsListHref } from "@/lib/obligations-list-url";
 import type { ObligationStatus } from "@/lib/types/database";
 
 const STATUS_FILTERS = [
@@ -14,12 +16,34 @@ const STATUS_FILTERS = [
   { key: "valid", label: "En règle" },
 ] as const;
 
+function entityLabel(o: {
+  employees: unknown;
+  sites: unknown;
+}): string {
+  const employee = o.employees as { full_name: string } | null;
+  const site = o.sites as { name: string } | null;
+  return employee?.full_name ?? site?.name ?? "Organisation";
+}
+
 export default async function ObligationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    obligation?: string;
+    concerne?: string;
+    due?: string;
+  }>;
 }) {
-  const { status: statusFilter } = await searchParams;
+  const {
+    status: statusFilter,
+    obligation: obligationParam,
+    concerne: concerneParam,
+    due: dueParam,
+  } = await searchParams;
+  const obligationQ = obligationParam?.trim().toLowerCase() ?? "";
+  const concerneQ = concerneParam?.trim().toLowerCase() ?? "";
+  const dueFilter = dueParam === "none" || dueParam === "set" ? dueParam : "";
 
   const supabase = await createClient();
   const {
@@ -45,9 +69,29 @@ export default async function ObligationsPage({
   const all = obligations || [];
   const counts = countsByStatus(all);
 
-  const filtered = statusFilter
+  let filtered = statusFilter
     ? all.filter((o) => o.status === statusFilter)
     : all;
+
+  if (obligationQ) {
+    filtered = filtered.filter((o) => {
+      const tpl = o.obligation_templates as unknown as {
+        name: string;
+      } | null;
+      const name = tpl?.name?.toLowerCase();
+      return name?.includes(obligationQ) ?? false;
+    });
+  }
+  if (concerneQ) {
+    filtered = filtered.filter((o) =>
+      entityLabel(o).toLowerCase().includes(concerneQ)
+    );
+  }
+  if (dueFilter === "none") {
+    filtered = filtered.filter((o) => !o.due_date);
+  } else if (dueFilter === "set") {
+    filtered = filtered.filter((o) => !!o.due_date);
+  }
 
   // Ordered by urgency for the filtered set
   const ordered = [...filtered].sort((a, b) => {
@@ -79,10 +123,12 @@ export default async function ObligationsPage({
             f.key === statusFilter || (!statusFilter && f.key === undefined);
           const count =
             f.key !== undefined ? counts[f.key] : counts.total;
-          const href =
-            f.key !== undefined
-              ? `/obligations?status=${f.key}`
-              : "/obligations";
+          const href = buildObligationsListHref({
+            status: f.key,
+            obligation: obligationParam,
+            concerne: concerneParam,
+            due: dueFilter,
+          });
           return (
             <Link
               key={f.label}
@@ -110,11 +156,19 @@ export default async function ObligationsPage({
 
       {/* Tableau */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {all.length > 0 && (
+          <ObligationsColumnFilters
+            status={statusFilter}
+            obligation={obligationParam ?? ""}
+            concerne={concerneParam ?? ""}
+            due={dueFilter}
+          />
+        )}
         {ordered.length === 0 ? (
           <div className="p-12 text-center">
             <ClipboardList className="mx-auto h-8 w-8 text-gray-300 mb-3" />
             <p className="text-sm text-gray-400">
-              Aucune obligation pour ce filtre.
+              Aucune obligation ne correspond à ces filtres.
             </p>
           </div>
         ) : (
@@ -139,16 +193,11 @@ export default async function ObligationsPage({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {ordered.map((o) => {
-                  const template = o.obligation_templates as {
+                  const template = o.obligation_templates as unknown as {
                     name: string;
                     applies_to: string;
                   } | null;
-                  const employee = o.employees as {
-                    full_name: string;
-                  } | null;
-                  const site = o.sites as { name: string } | null;
-                  const entity =
-                    employee?.full_name ?? site?.name ?? "Organisation";
+                  const entity = entityLabel(o);
                   return (
                     <tr
                       key={o.id}
