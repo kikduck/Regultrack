@@ -32,6 +32,10 @@
 > Le client envoie ses documents en vrac. L'IA extrait, classe et propose une configuration complète.
 > Le client valide/corrige sur un écran de confirmation. Toi, tu n'interviens pas dans le flux standard.
 
+**Concept UX inspiré EnRègle :**
+> Séparation claire entre **Collaborateurs** (agents de sécurité avec habilitations CNAPS, SST, etc.) et **Équipe** (utilisateurs du SaaS avec rôles Owner/Admin/Site Manager/Viewer).
+> Cette distinction évite la confusion "est-ce que j'ajoute un agent ou un collègue qui se connecte ?"
+
 ---
 
 ## BASE DE CONNAISSANCES RÉGLEMENTAIRES
@@ -194,6 +198,18 @@
 - [ ] **Vue obligations organisation** : section dans le dashboard ou page dédiée pour les obligations `applies_to = 'organization'` (autorisation préfectorale, RC Pro)
 - [ ] **Redirection post-signup** : si l'org n'est pas créée → page d'état intermédiaire claire au lieu d'une boucle
 
+#### 1.4 — Postes personnalisables (inspiré EnRègle)
+
+> EnRègle permet de créer des postes custom. C'est essentiel pour s'adapter à la diversité des structures.
+
+- [ ] **Table `job_titles`** : scoped par organisation, permet de créer des postes métiers personnalisés
+  - Exemples : "Agent de surveillance nuit", "Chef d'équipe régional Sud", "Superviseur multi-sites"
+  - Champs : `org_id`, `name`, `description`, `created_at`
+- [ ] **Migration** : ajouter `job_title_id` sur `employees` (nullable, garde `job_title` text comme fallback)
+- [ ] **UI gestion des postes** : dans `/settings` ou modal lors de l'ajout d'employé
+  - Liste des postes existants + bouton "+ Créer un poste"
+  - Autocomplete avec création rapide inline
+
 ---
 
 ### Phase 2 — Moteur d'écart & vue siège (le cœur du produit)
@@ -243,12 +259,23 @@
 
 > 3 niveaux : siège voit tout, site manager gère son périmètre, employé uploade via lien.
 
-#### 4.1 — Rôles (schema OK, logique manquante)
+#### 4.1 — Rôles enrichis (inspiré EnRègle — séparation "Collaborateurs" vs "Équipe")
+
+> EnRègle distingue bien : **Collaborateurs** (agents de sécurité avec habilitations) vs **Équipe** (utilisateurs du SaaS avec permissions).
+> On garde cette clarté dans l'UX.
+
+| Rôle SaaS | Description | Équivalent EnRègle |
+|-----------|-------------|-------------------|
+| **Owner** | Propriétaire/dirigeant — accès complet, gestion facturation | BUT |
+| **Admin** | Accès complet au pilotage quotidien, hors gestion propriétaire (pas de changement de plan) | ADMIN |
+| **Site Manager** | Voir et gérer uniquement son(ses) site(s) assigné(s) | MEMBRE (limité) |
+| **Viewer** | Consultation opérationnelle sans modification | MEMBRE (lecture seule) |
 
 - [ ] **Admin/Owner** : accès complet à tous les sites et employés (déjà le cas par défaut)
 - [ ] **Site Manager** : le layout et les pages filtrent les données au périmètre du site assigné
+- [ ] **Viewer** (nouveau) : accès en lecture seule, idéal pour les dirigeants qui veulent suivre sans intervenir
 - [ ] **Vérifier RLS** : un `site_manager` ne peut pas accéder aux données d'un autre site via manipulation d'URL
-- [ ] **Sélecteur de rôle** : dans le formulaire d'ajout d'employé, pouvoir assigner `site_manager`
+- [ ] **Sélecteur de rôle** : dans le formulaire d'ajout d'utilisateur, pouvoir assigner `admin`, `site_manager`, ou `viewer`
 
 #### 4.2 — Lien d'upload employé (sans compte)
 
@@ -376,7 +403,8 @@
 - [ ] **Stripe webhook** : gérer les événements (abonnement créé, annulé, paiement échoué)
 - [ ] **Gating** : bloquer l'ajout de sites au-delà du plan souscrit
 - [ ] **Période d'essai** : 14 jours gratuits sans CB, puis passage au paiement
-- [ ] **Page `/settings`** : nom d'organisation, changement de mot de passe, gestion abonnement
+- [ ] **Page `/settings`** : nom d'organisation, changement de mot de passe, gestion abonnement, **infos entreprise** (SIREN/SIRET, adresse siège, téléphone)
+- [ ] **Page `/settings/team`** : gestion des utilisateurs SaaS (inspiré EnRègle — séparer "Collaborateurs" [agents de sécurité] de "Équipe" [utilisateurs du logiciel])
 - [ ] **Page `/settings/billing`** : historique des factures, changement de plan, portail Stripe
 - [ ] **Email de bienvenue** : envoyé automatiquement après signup via Resend
 
@@ -498,10 +526,14 @@ Alerte interne back-office → validation humaine obligatoire
 
 | Date | Action |
 |------|---------|
-| 04/04/2026 | Initialisation projet Next.js + Supabase, toutes les pages MVP créées |
-| 04/04/2026 | Fix 403 signup : création organisation via API route admin |
-| 04/04/2026 | Refonte complète du plan — architecture 2 produits, onboarding IA Model C |
-| 04/04/2026 | Ajout base de connaissances réglementaires comme pilier central + outil de veille |
+| 04/04/2026 | ✅ Initialisation projet Next.js + Supabase, toutes les pages MVP créées |
+| 04/04/2026 | ✅ Fix 403 signup : création organisation via API route admin |
+| 04/04/2026 | ✅ Refonte complète du plan — architecture 2 produits, onboarding IA Model C |
+| 04/04/2026 | ✅ Ajout base de connaissances réglementaires comme pilier central + outil de veille |
+| 05/04/2026 | ✅ Phase R1/R2 — Migration enrichie + Seed complet sécurité privée (12 obligations) |
+| 05/04/2026 | ✅ Phase 1.1 — CRUD complet (edit sites/employés, archive, delete) |
+| 05/04/2026 | ✅ Phase 1.2 — Auto-création obligations (org, site, employé) avec déduplication |
+| 05/04/2026 | 📝 Inspiration EnRègle — Ajout postes custom, rôles enrichis, séparation Collaborateurs/Équipe |
 
 ---
 
@@ -514,7 +546,11 @@ Alerte interne back-office → validation humaine obligatoire
 
 **Produit A :** ce qui suffit pour une démo + un usage réel
 
-1. **Phase 1** — fondations CRUD + auto-création obligations + UX verticale (écran bienvenue, aide contextuelle)
+1. **Phase 1** — fondations CRUD + auto-création obligations + UX verticale
+   - 1.1 ✅ CRUD complet (fait)
+   - 1.2 ✅ Auto-création obligations (fait)
+   - 1.3 UX verticale (écran bienvenue, aide contextuelle) — à faire
+   - 1.4 Postes personnalisables (inspiré EnRègle) — à faire
 2. **Phase 2.1 + 2.2** — moteur d'écart + vue siège (la promesse centrale)
 3. **Phase 3** — alertes email sectorielles (la valeur récurrente)
 4. **Phase 5** — export PDF sectoriel (dossier d'inspection en 30 secondes)
