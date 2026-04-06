@@ -190,7 +190,7 @@ Pour chaque site et chaque obligation : est-ce que la preuve existe ? Est-elle v
 Tableau de bord global : code couleur par site (vert / orange / rouge), filtrable par type d'obligation, par site, par délai. Un coup d'œil suffit pour savoir où agir.
 
 **Alertes automatiques**
-À J-90, J-30, J-7 selon la criticité, adressées à la bonne personne (responsable de site, RH, direction). Pas un rappel de calendrier — une notification contextuelle avec le lien direct vers la pièce à renouveler.
+À J-90, J-30, J-7 selon la criticité, adressées à la bonne personne (responsable de site, RH, direction). Pas un rappel de calendrier — une notification contextuelle avec le lien direct vers la pièce à renouveler. **Par défaut**, ces rappels d’**expiration** sont déjà programmés selon le secteur ; une entrée **« Alertes » dans la sidebar** permet d’ajuster finement (seuils, périmètre, destinataires) sans partir d’un produit « muet » à l’inscription.
 
 **Dépôt de preuves simple**
 Upload depuis mobile (photo) ou desktop (PDF). Le document est lié à l'obligation précise, pas juste stocké dans un dossier. Horodatage, versioning léger.
