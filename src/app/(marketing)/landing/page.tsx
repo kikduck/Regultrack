@@ -203,7 +203,10 @@ export default function LandingPage() {
       <footer className="border-t border-gray-200 py-8">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between text-sm text-gray-500">
           <p>&copy; {new Date().getFullYear()} Regultrack</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
+            <Link href="/legal" className="hover:text-gray-700">
+              Mentions légales
+            </Link>
             <a href="mailto:contact@regultrack.fr" className="hover:text-gray-700">
               Contact
             </a>

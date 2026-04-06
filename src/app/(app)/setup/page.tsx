@@ -30,9 +30,18 @@ export default function SetupPage() {
         .single();
 
       if (profile?.org_id) {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       } else {
         setFullName(profile?.full_name || "");
+        try {
+          const pendingOrg = sessionStorage.getItem("regultrack_pending_org_name");
+          if (pendingOrg) {
+            setOrgName(pendingOrg);
+            sessionStorage.removeItem("regultrack_pending_org_name");
+          }
+        } catch {
+          /* ignore */
+        }
         setChecking(false);
       }
     }
@@ -41,6 +50,13 @@ export default function SetupPage() {
 
   async function handleSetup(e: React.FormEvent) {
     e.preventDefault();
+    const name = fullName.trim();
+    const company = orgName.trim();
+    if (!name || !company) {
+      setError("Renseignez votre nom complet et le nom de l’entreprise pour continuer.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -48,17 +64,27 @@ export default function SetupPage() {
       const res = await fetch("/api/auth/setup-org", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgName, fullName }),
+        body: JSON.stringify({ orgName: company, fullName: name }),
+        credentials: "same-origin",
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erreur lors de la configuration");
+      const text = await res.text();
+      let payload: { error?: string } = {};
+      try {
+        payload = text ? (JSON.parse(text) as { error?: string }) : {};
+      } catch {
+        payload = { error: text || "Réponse serveur invalide" };
       }
 
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message);
+      if (!res.ok) {
+        throw new Error(payload.error || `Erreur ${res.status}`);
+      }
+
+      await router.refresh();
+      router.replace("/dashboard");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur lors de la configuration");
+    } finally {
       setLoading(false);
     }
   }

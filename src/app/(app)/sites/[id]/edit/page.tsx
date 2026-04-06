@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { AddressAutocompleteInput } from "@/components/address-autocomplete-input";
 
 export default function EditSitePage() {
   const [name, setName] = useState("");
@@ -100,17 +101,13 @@ export default function EditSitePage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Adresse
-          </label>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-          />
-        </div>
+        <AddressAutocompleteInput
+          id="site-address-edit"
+          label="Adresse"
+          value={address}
+          onChange={setAddress}
+          placeholder="12 rue de la Paix, 75002 Paris"
+        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700">

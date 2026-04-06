@@ -37,22 +37,22 @@ export default async function SiteDetailPage({ params }: PageProps) {
       .order("full_name"),
     supabase
       .from("obligations")
-      .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, applies_to), employees(full_name), proofs(*)")
+      .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, applies_to), custom_obligation_templates(name, description, renewal_months, renewal_process, required_documents, official_link, help_text, applies_to), employees(full_name), proofs(*, profiles(full_name))")
       .eq("site_id", id),
   ]);
 
   const employees = employeesResult.data || [];
-  const obligations = obligationsResult.data || [];
+  const obligations = (obligationsResult.data || []).map(o => ({
+    ...o,
+    // Flatten applies_to for easier filtering
+    applies_to: (o.obligation_templates as any)?.applies_to || (o.custom_obligation_templates as any)?.applies_to
+  }));
 
   const siteObligations = obligations.filter(
-    (o) =>
-      (o.obligation_templates as { applies_to: string } | null)?.applies_to ===
-      "site"
+    (o) => o.applies_to === "site"
   );
   const employeeObligations = obligations.filter(
-    (o) =>
-      (o.obligation_templates as { applies_to: string } | null)?.applies_to ===
-      "employee"
+    (o) => o.applies_to === "employee"
   );
 
   return (

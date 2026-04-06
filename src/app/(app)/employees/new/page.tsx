@@ -6,14 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Site } from "@/lib/types/database";
+import { JobTitleSelect } from "@/components/job-title-select";
 import { resolveOrgSector } from "@/lib/profile-org";
 
 export default function NewEmployeePage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [jobTitle, setJobTitle] = useState("agent");
+  const [jobTitle, setJobTitle] = useState("Agent de sécurité");
+  const [jobTitleId, setJobTitleId] = useState<string | null>(null);
   const [siteId, setSiteId] = useState("");
   const [sites, setSites] = useState<Site[]>([]);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -34,6 +37,7 @@ export default function NewEmployeePage() {
         .single();
 
       if (!profile?.org_id) return;
+      setOrgId(profile.org_id);
 
       const { data } = await supabase
         .from("sites")
@@ -58,6 +62,10 @@ export default function NewEmployeePage() {
     e.preventDefault();
     if (!siteId) {
       setError("Veuillez d'abord créer un site.");
+      return;
+    }
+    if (!orgId) {
+      setError("Organisation non trouvée.");
       return;
     }
     setLoading(true);
@@ -89,6 +97,7 @@ export default function NewEmployeePage() {
         full_name: fullName,
         email: email || null,
         job_title: jobTitle,
+        job_title_id: jobTitleId,
       })
       .select()
       .single();
@@ -117,6 +126,26 @@ export default function NewEmployeePage() {
       }));
 
       await supabase.from("obligations").insert(obligationsToInsert);
+    }
+
+    // Auto-create custom obligations
+    const { data: customTemplates } = await supabase
+      .from("custom_obligation_templates")
+      .select("*")
+      .eq("org_id", profile.org_id)
+      .eq("applies_to", "employee")
+      .eq("active", true);
+
+    if (customTemplates && customTemplates.length > 0) {
+      const customObligationsToInsert = customTemplates.map((t) => ({
+        org_id: profile.org_id!,
+        custom_template_id: t.id,
+        site_id: siteId,
+        employee_id: employee.id,
+        status: "missing" as const,
+      }));
+
+      await supabase.from("obligations").insert(customObligationsToInsert);
     }
 
     router.push("/employees");
@@ -171,20 +200,20 @@ export default function NewEmployeePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Poste / Fonction
           </label>
-          <select
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-          >
-            <option value="agent">Agent de sécurité</option>
-            <option value="agent_ssiap">Agent SSIAP</option>
-            <option value="chef_poste">Chef de poste</option>
-            <option value="responsable">Responsable d&apos;agence</option>
-            <option value="administratif">Administratif</option>
-          </select>
+          {orgId && (
+            <JobTitleSelect
+              value={jobTitle}
+              jobTitleId={jobTitleId}
+              onChange={(name, id) => {
+                setJobTitle(name);
+                setJobTitleId(id);
+              }}
+              orgId={orgId}
+            />
+          )}
         </div>
 
         <div>

@@ -8,9 +8,11 @@ import {
   Building2,
   Users,
   ClipboardList,
+  Bell,
   Shield,
   LogOut,
   ChevronLeft,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -19,7 +21,50 @@ const navItems = [
   { href: "/sites", label: "Sites", icon: Building2 },
   { href: "/employees", label: "Employés", icon: Users },
   { href: "/obligations", label: "Obligations", icon: ClipboardList },
-];
+  { href: "/alerts", label: "Alertes", icon: Bell },
+  { href: "/settings", label: "Paramètres", icon: Settings },
+] as const;
+
+/** Placeholder SSR pour Suspense (même largeur que la barre dépliée). */
+export function SidebarFallback() {
+  return (
+    <aside
+      className="flex h-full w-60 shrink-0 flex-col bg-sidebar-bg text-sidebar-text"
+      aria-hidden
+    >
+      <div className="h-[73px] border-b border-white/10 px-4 py-5" />
+      <div className="flex-1 space-y-1 px-2 py-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-10 rounded-lg bg-white/5"
+          />
+        ))}
+      </div>
+      <div className="border-t border-white/10 px-2 py-3">
+        <div className="mx-3 mb-2 h-3 w-24 rounded bg-white/10" />
+        <div className="h-10 rounded-lg bg-white/5" />
+      </div>
+    </aside>
+  );
+}
+
+function isSidebarItemActive(pathname: string, href: string): boolean {
+  if (href === "/alerts") {
+    return (
+      pathname === "/alerts" ||
+      pathname.startsWith("/alerts/") ||
+      pathname.startsWith("/settings/alerts")
+    );
+  }
+  if (href === "/settings") {
+    return (
+      pathname.startsWith("/settings") &&
+      !pathname.startsWith("/settings/alerts")
+    );
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function Sidebar({
   userName,
@@ -68,7 +113,7 @@ export function Sidebar({
 
       <nav className="flex-1 px-2 py-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = isSidebarItemActive(pathname, item.href);
           return (
             <Link
               key={item.href}

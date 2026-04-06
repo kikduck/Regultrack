@@ -17,3 +17,10 @@ export function employesAuSiteLabel(count: number): string {
   if (count === 1) return "1 employé";
   return `${count} employés`;
 }
+
+/** Phrase unique pour lecteurs d’écran (évite « document s manquant s » fragmenté). */
+export function documentsManquantsPhrase(count: number): string {
+  if (count <= 0) return "";
+  if (count === 1) return "1 document manquant";
+  return `${count} documents manquants`;
+}

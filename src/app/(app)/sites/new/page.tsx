@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { resolveOrgSector } from "@/lib/profile-org";
+import { AddressAutocompleteInput } from "@/components/address-autocomplete-input";
 
 export default function NewSitePage() {
   const [name, setName] = useState("");
@@ -74,6 +75,25 @@ export default function NewSitePage() {
       await supabase.from("obligations").insert(obligationsToInsert);
     }
 
+    // Auto-create custom site obligations
+    const { data: customTemplates } = await supabase
+      .from("custom_obligation_templates")
+      .select("*")
+      .eq("org_id", profile.org_id)
+      .eq("applies_to", "site")
+      .eq("active", true);
+
+    if (customTemplates && customTemplates.length > 0) {
+      const customToInsert = customTemplates.map((t) => ({
+        org_id: profile.org_id!,
+        custom_template_id: t.id,
+        site_id: insertedSite.id,
+        status: "missing" as const,
+      }));
+
+      await supabase.from("obligations").insert(customToInsert);
+    }
+
     router.push("/sites");
   }
 
@@ -112,18 +132,13 @@ export default function NewSitePage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Adresse
-          </label>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-            placeholder="12 rue de la Paix, 75002 Paris"
-          />
-        </div>
+        <AddressAutocompleteInput
+          id="site-address"
+          label="Adresse"
+          value={address}
+          onChange={setAddress}
+          placeholder="12 rue de la Paix, 75002 Paris"
+        />
 
         <div>
           <label className="block text-sm font-medium text-gray-700">

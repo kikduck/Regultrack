@@ -19,7 +19,7 @@ export default async function EmployeesPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.org_id) redirect("/signup");
+  if (!profile?.org_id) redirect("/setup");
 
   const [employeesResult, sitesResult, obligationsResult] = await Promise.all([
     supabase

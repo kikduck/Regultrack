@@ -1,36 +1,60 @@
 import Link from "next/link";
 import { Upload, Info, ExternalLink, FileText, Landmark, RefreshCcw } from "lucide-react";
 import { StatusBadge } from "./status-badge";
+import { ProofHistoryList } from "./proof-history-list";
 import type { ObligationStatus } from "@/lib/types/database";
+import {
+  pickActiveProofId,
+  sortProofsNewestFirst,
+  type ProofForDisplay,
+} from "@/lib/proof-display";
 
 interface ObligationCardProps {
   obligation: {
     id: string;
     status: string;
     due_date: string | null;
-    obligation_templates: {
+    obligation_templates?: {
       name: string;
       description: string;
       renewal_months: number;
       renewal_process: string | null;
       required_documents: string | null;
-      competent_authority: string | null;
-      official_url: string | null;
-      legal_reference: string | null;
+      competent_authority?: string | null;
+      official_url?: string | null;
+      legal_reference?: string | null;
       help_text: string | null;
     } | null;
-    proofs?: {
-      id: string;
-      file_name: string;
-      file_url: string;
-      uploaded_at: string;
-    }[];
+    custom_obligation_templates?: {
+      name: string;
+      description: string;
+      renewal_months: number;
+      renewal_process: string | null;
+      required_documents: string | null;
+      official_link?: string | null;
+      help_text: string | null;
+    } | null;
+    proofs?: ProofForDisplay[];
   };
 }
 
 export function ObligationCard({ obligation }: ObligationCardProps) {
-  const template = obligation.obligation_templates;
-  const proofs = obligation.proofs || [];
+  const standardTemplate = obligation.obligation_templates;
+  const customTemplate = obligation.custom_obligation_templates;
+  const template = standardTemplate || customTemplate;
+  const rawProofs = obligation.proofs || [];
+  const proofs: ProofForDisplay[] = rawProofs.map((p) => ({
+    id: p.id,
+    file_name: p.file_name,
+    file_url: p.file_url,
+    uploaded_at: p.uploaded_at,
+    valid_from: p.valid_from ?? null,
+    valid_until: p.valid_until ?? null,
+    file_hash: p.file_hash ?? null,
+    profiles: p.profiles ?? null,
+  }));
+  const sortedProofs = sortProofsNewestFirst(proofs);
+  const activeProofId = pickActiveProofId(proofs, obligation.due_date);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -43,6 +67,11 @@ export function ObligationCard({ obligation }: ObligationCardProps) {
               {obligation.status === 'missing' && (
                 <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
                   À compléter
+                </span>
+              )}
+              {customTemplate && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary ring-1 ring-inset ring-primary/20">
+                  Personnalisée
                 </span>
               )}
             </h3>
@@ -105,25 +134,25 @@ export function ObligationCard({ obligation }: ObligationCardProps) {
               <p className="text-xs text-gray-700 leading-relaxed">{template.required_documents}</p>
             </div>
           )}
-          {template?.competent_authority && (
+          {standardTemplate?.competent_authority && (
             <div className="space-y-1">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Landmark className="h-3 w-3" /> Organisme
               </p>
-              <p className="text-xs text-gray-700 leading-relaxed">{template.competent_authority}</p>
+              <p className="text-xs text-gray-700 leading-relaxed">{standardTemplate.competent_authority}</p>
             </div>
           )}
-          {template?.legal_reference && (
+          {standardTemplate?.legal_reference && (
             <div className="space-y-1">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Référence légale</p>
-              <p className="text-[10px] text-gray-500 italic">{template.legal_reference}</p>
+              <p className="text-[10px] text-gray-500 italic">{standardTemplate.legal_reference}</p>
             </div>
           )}
         </div>
 
-        {template?.official_url && (
+        {(standardTemplate?.official_url || customTemplate?.official_link) && (
           <a
-            href={template.official_url}
+            href={standardTemplate?.official_url || customTemplate?.official_link || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
@@ -133,27 +162,21 @@ export function ObligationCard({ obligation }: ObligationCardProps) {
         )}
       </div>
 
-      {/* Proofs Footer */}
-      <div className="p-5 bg-white border-t border-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-2">
-          {proofs.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {proofs.map((proof) => (
-                <a
-                  key={proof.id}
-                  href={proof.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 text-[11px] font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-                >
-                  <FileText className="h-3.5 w-3.5 text-gray-400" />
-                  {proof.file_name}
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[11px] text-gray-400 italic">Aucun document rattaché</p>
-          )}
+      {/* Preuves : historique, actuelle / périmée, empreinte SHA-256 */}
+      <div className="p-5 bg-white border-t border-gray-50 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            Preuves et traçabilité
+          </p>
+          <p className="text-[10px] text-gray-500 leading-relaxed">
+            Les preuves ne sont pas supprimées depuis l’app (audit). Chaque fichier
+            déposé après mise à jour produit inclut une empreinte SHA-256 pour
+            détecter toute altération ultérieure.
+          </p>
+          <ProofHistoryList
+            proofs={sortedProofs}
+            activeProofId={activeProofId}
+          />
         </div>
 
         <Link

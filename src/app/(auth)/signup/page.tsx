@@ -42,6 +42,11 @@ export default function SignupPage() {
       return;
     }
 
+    try {
+      sessionStorage.setItem("regultrack_pending_org_name", orgName.trim());
+    } catch {
+      /* private mode / quota */
+    }
     router.push("/setup");
   }
 

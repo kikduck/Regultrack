@@ -5,7 +5,7 @@ import { ClipboardList } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { ObligationsColumnFilters } from "@/components/obligations-column-filters";
 import { countsByStatus } from "@/lib/compliance-score";
-import { buildObligationsListHref } from "@/lib/obligations-list-url";
+import { buildObligationsListHref, parseMulti } from "@/lib/obligations-list-url";
 import type { ObligationStatus } from "@/lib/types/database";
 
 const STATUS_FILTERS = [
@@ -32,18 +32,25 @@ export default async function ObligationsPage({
     status?: string;
     obligation?: string;
     concerne?: string;
-    due?: string;
+    due_from?: string;
+    due_to?: string;
+    due_none?: string;
   }>;
 }) {
   const {
     status: statusFilter,
     obligation: obligationParam,
     concerne: concerneParam,
-    due: dueParam,
+    due_from: dueFromParam,
+    due_to: dueToParam,
+    due_none: dueNoneParam,
   } = await searchParams;
-  const obligationQ = obligationParam?.trim().toLowerCase() ?? "";
-  const concerneQ = concerneParam?.trim().toLowerCase() ?? "";
-  const dueFilter = dueParam === "none" || dueParam === "set" ? dueParam : "";
+
+  const selectedObligations = parseMulti(obligationParam);
+  const selectedConcernes = parseMulti(concerneParam);
+  const dueFrom = dueFromParam?.trim() ?? "";
+  const dueTo = dueToParam?.trim() ?? "";
+  const dueNone = dueNoneParam === "1";
 
   const supabase = await createClient();
   const {
@@ -61,36 +68,59 @@ export default async function ObligationsPage({
   const { data: obligations } = await supabase
     .from("obligations")
     .select(
-      "id, status, due_date, site_id, employee_id, obligation_templates(name, applies_to), sites(name), employees(full_name)"
+      "id, status, due_date, site_id, employee_id, obligation_templates(name, applies_to), custom_obligation_templates(name, applies_to), sites(name), employees(full_name)"
     )
     .eq("org_id", profile.org_id)
     .order("due_date", { ascending: true, nullsFirst: false });
 
-  const all = obligations || [];
+  const all = (obligations || []).map(o => ({
+    ...o,
+    template_name: (o.obligation_templates as any)?.name || (o.custom_obligation_templates as any)?.name,
+    applies_to: (o.obligation_templates as any)?.applies_to || (o.custom_obligation_templates as any)?.applies_to
+  }));
   const counts = countsByStatus(all);
+
+  // Valeurs uniques pour les listes déroulantes
+  const uniqueObligations = Array.from(
+    new Set(
+      all
+        .map((o) => o.template_name)
+        .filter((name): name is string => typeof name === "string")
+    )
+  ).sort();
+
+  const uniqueEntities = Array.from(
+    new Set(all.map((o) => entityLabel(o)).filter(Boolean))
+  ).sort();
 
   let filtered = statusFilter
     ? all.filter((o) => o.status === statusFilter)
     : all;
 
-  if (obligationQ) {
-    filtered = filtered.filter((o) => {
-      const tpl = o.obligation_templates as unknown as {
-        name: string;
-      } | null;
-      const name = tpl?.name?.toLowerCase();
-      return name?.includes(obligationQ) ?? false;
-    });
+  if (selectedObligations.length > 0) {
+    filtered = filtered.filter((o) => o.template_name ? selectedObligations.includes(o.template_name) : false);
   }
-  if (concerneQ) {
+  if (selectedConcernes.length > 0) {
     filtered = filtered.filter((o) =>
-      entityLabel(o).toLowerCase().includes(concerneQ)
+      selectedConcernes.includes(entityLabel(o))
     );
   }
-  if (dueFilter === "none") {
+  if (dueNone) {
     filtered = filtered.filter((o) => !o.due_date);
-  } else if (dueFilter === "set") {
-    filtered = filtered.filter((o) => !!o.due_date);
+  } else {
+    if (dueFrom) {
+      const from = new Date(dueFrom);
+      filtered = filtered.filter(
+        (o) => o.due_date && new Date(o.due_date) >= from
+      );
+    }
+    if (dueTo) {
+      const to = new Date(dueTo);
+      to.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(
+        (o) => o.due_date && new Date(o.due_date) <= to
+      );
+    }
   }
 
   // Ordered by urgency for the filtered set
@@ -116,7 +146,7 @@ export default async function ObligationsPage({
         </p>
       </div>
 
-      {/* Filtres */}
+      {/* Filtres statut */}
       <div className="flex gap-2 mb-6 flex-wrap">
         {STATUS_FILTERS.map((f) => {
           const isActive =
@@ -125,9 +155,11 @@ export default async function ObligationsPage({
             f.key !== undefined ? counts[f.key] : counts.total;
           const href = buildObligationsListHref({
             status: f.key,
-            obligation: obligationParam,
-            concerne: concerneParam,
-            due: dueFilter,
+            obligations: selectedObligations,
+            concernes: selectedConcernes,
+            dueFrom,
+            dueTo,
+            dueNone,
           });
           return (
             <Link
@@ -159,9 +191,13 @@ export default async function ObligationsPage({
         {all.length > 0 && (
           <ObligationsColumnFilters
             status={statusFilter}
-            obligation={obligationParam ?? ""}
-            concerne={concerneParam ?? ""}
-            due={dueFilter}
+            selectedObligations={selectedObligations}
+            selectedConcernes={selectedConcernes}
+            dueFrom={dueFrom}
+            dueTo={dueTo}
+            dueNone={dueNone}
+            uniqueObligations={uniqueObligations}
+            uniqueEntities={uniqueEntities}
           />
         )}
         {ordered.length === 0 ? (
@@ -193,10 +229,6 @@ export default async function ObligationsPage({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {ordered.map((o) => {
-                  const template = o.obligation_templates as unknown as {
-                    name: string;
-                    applies_to: string;
-                  } | null;
                   const entity = entityLabel(o);
                   return (
                     <tr
@@ -204,7 +236,7 @@ export default async function ObligationsPage({
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-5 py-3.5 font-medium text-gray-900">
-                        {template?.name}
+                        {o.template_name}
                       </td>
                       <td className="px-5 py-3.5 text-gray-600">{entity}</td>
                       <td className="px-5 py-3.5">
@@ -219,6 +251,7 @@ export default async function ObligationsPage({
                         <Link
                           href={`/obligations/${o.id}/upload`}
                           className="text-xs font-semibold text-primary hover:underline"
+                          aria-label={`Gérer la preuve : ${o.template_name ?? "Obligation"}, ${entity}`}
                         >
                           Gérer
                         </Link>

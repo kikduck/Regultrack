@@ -19,7 +19,7 @@ export default async function SitesPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.org_id) redirect("/signup");
+  if (!profile?.org_id) redirect("/setup");
 
   const [sitesResult, obligationsResult, employeesResult] = await Promise.all([
     supabase.from("sites").select("*").eq("org_id", profile.org_id).order("name"),

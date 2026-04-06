@@ -25,7 +25,16 @@ export interface Employee {
   full_name: string;
   email: string | null;
   job_title: string;
+  job_title_id: string | null;
   active: boolean;
+  created_at: string;
+}
+
+export interface JobTitle {
+  id: string;
+  org_id: string;
+  name: string;
+  description: string | null;
   created_at: string;
 }
 
@@ -44,7 +53,8 @@ export interface ObligationTemplate {
 export interface Obligation {
   id: string;
   org_id: string;
-  template_id: string;
+  template_id: string | null;
+  custom_template_id: string | null;
   site_id: string | null;
   employee_id: string | null;
   due_date: string | null;
@@ -63,6 +73,8 @@ export interface Proof {
   valid_from: string | null;
   valid_until: string | null;
   uploaded_at: string;
+  /** SHA-256 hex 64 caractères, null si preuve antérieure à la colonne */
+  file_hash: string | null;
 }
 
 export interface Profile {
@@ -91,6 +103,11 @@ export interface Database {
         Insert: Omit<Employee, "id" | "created_at">;
         Update: Partial<Omit<Employee, "id" | "created_at">>;
       };
+      job_titles: {
+        Row: JobTitle;
+        Insert: Omit<JobTitle, "id" | "created_at">;
+        Update: Partial<Omit<JobTitle, "id" | "created_at">>;
+      };
       obligation_templates: {
         Row: ObligationTemplate;
         Insert: Omit<ObligationTemplate, "id" | "created_at">;
@@ -103,7 +120,7 @@ export interface Database {
       };
       proofs: {
         Row: Proof;
-        Insert: Omit<Proof, "id" | "uploaded_at">;
+        Insert: Omit<Proof, "id" | "uploaded_at"> & { file_hash?: string | null };
         Update: Partial<Omit<Proof, "id" | "uploaded_at">>;
       };
       profiles: {

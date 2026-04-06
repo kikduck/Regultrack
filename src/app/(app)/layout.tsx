@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Sidebar } from "@/components/sidebar";
+import { Sidebar, SidebarFallback } from "@/components/sidebar";
 
 export default async function AppLayout({
   children,
@@ -24,12 +25,14 @@ export default async function AppLayout({
 
   return (
     <div className="flex h-full">
-      <Sidebar
-        userName={profile?.full_name || user.email || ""}
-        orgName={
-          (profile?.organizations as { name: string } | null)?.name || ""
-        }
-      />
+      <Suspense fallback={<SidebarFallback />}>
+        <Sidebar
+          userName={profile?.full_name || user.email || ""}
+          orgName={
+            (profile?.organizations as { name: string } | null)?.name || ""
+          }
+        />
+      </Suspense>
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );

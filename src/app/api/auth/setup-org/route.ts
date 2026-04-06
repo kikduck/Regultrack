@@ -10,10 +10,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const { orgName, fullName } = await request.json();
+  const body = (await request.json()) as { orgName?: unknown; fullName?: unknown };
+  const orgName = typeof body.orgName === "string" ? body.orgName.trim() : "";
+  const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
 
   if (!orgName || !fullName) {
-    return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
+    return NextResponse.json({ error: "Nom complet et nom d’entreprise requis" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -28,13 +30,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: orgError?.message || "Erreur création org" }, { status: 500 });
   }
 
-  const { error: profileError } = await admin
+  const { data: updatedProfiles, error: profileError } = await admin
     .from("profiles")
     .update({ org_id: org.id, full_name: fullName })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("id");
 
-  if (profileError) {
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
+  if (profileError || !updatedProfiles?.length) {
+    await admin.from("organizations").delete().eq("id", org.id);
+    return NextResponse.json(
+      {
+        error:
+          profileError?.message ||
+          "Impossible de lier votre profil à l’organisation (profil introuvable). Déconnectez-vous puis reconnectez-vous.",
+      },
+      { status: 500 }
+    );
   }
 
   // Auto-create organization obligations
@@ -63,7 +74,47 @@ export async function POST(request: Request) {
       }));
 
     if (toInsert.length > 0) {
-      await admin.from("obligations").insert(toInsert);
+      const { error: obError } = await admin.from("obligations").insert(toInsert);
+      if (obError) {
+        console.error("[setup-org] obligations insert:", obError.message);
+      }
+    }
+  }
+
+  // Habilitations perso (schéma optionnel selon migrations) : ne pas faire échouer tout le setup
+  const { data: customTemplates, error: customFetchError } = await admin
+    .from("custom_obligation_templates")
+    .select("id")
+    .eq("org_id", org.id)
+    .eq("applies_to", "organization")
+    .eq("active", true);
+
+  if (customFetchError) {
+    console.error("[setup-org] custom_obligation_templates:", customFetchError.message);
+  } else if (customTemplates && customTemplates.length > 0) {
+    const { data: existingCustom } = await admin
+      .from("obligations")
+      .select("custom_template_id")
+      .eq("org_id", org.id)
+      .is("site_id", null)
+      .is("employee_id", null);
+
+    const existingCustomIds = new Set(
+      existingCustom?.map((e) => e.custom_template_id) || []
+    );
+    const customToInsert = customTemplates
+      .filter((t) => !existingCustomIds.has(t.id))
+      .map((t) => ({
+        org_id: org.id,
+        custom_template_id: t.id,
+        status: "missing" as const,
+      }));
+
+    if (customToInsert.length > 0) {
+      const { error: cErr } = await admin.from("obligations").insert(customToInsert);
+      if (cErr) {
+        console.error("[setup-org] custom obligations insert:", cErr.message);
+      }
     }
   }
 

@@ -30,7 +30,7 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
 
   const { data: obligations } = await supabase
     .from("obligations")
-    .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, proof_type), proofs(*)")
+    .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, proof_type), custom_obligation_templates(name, description, renewal_months, renewal_process, required_documents, official_link, help_text, applies_to), proofs(*, profiles(full_name))")
     .eq("employee_id", id)
     .order("created_at");
 

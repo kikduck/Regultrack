@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Upload, FileText, X } from "lucide-react";
 import { statusFromDueDateAndAlerts } from "@/lib/obligation-status";
+import { sha256HexFromFile } from "@/lib/hash-file";
 
 export default function UploadProofPage() {
   const { id: obligationId } = useParams<{ id: string }>();
@@ -29,6 +30,15 @@ export default function UploadProofPage() {
     }
     setLoading(true);
     setError(null);
+
+    let fileHash: string;
+    try {
+      fileHash = await sha256HexFromFile(file);
+    } catch {
+      setError("Impossible de calculer l’empreinte du fichier. Réessayez.");
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     const {
@@ -60,6 +70,7 @@ export default function UploadProofPage() {
       uploaded_by: user.id,
       valid_from: validFrom || null,
       valid_until: validUntil || null,
+      file_hash: fileHash,
     });
 
     if (proofError) {
@@ -70,11 +81,11 @@ export default function UploadProofPage() {
 
     const { data: obligationRow } = await supabase
       .from("obligations")
-      .select("obligation_templates(alert_days)")
+      .select("obligation_templates(alert_days), custom_obligation_templates(alert_days)")
       .eq("id", obligationId)
       .single();
 
-    const template = obligationRow?.obligation_templates as unknown as {
+    const template = (obligationRow?.obligation_templates || obligationRow?.custom_obligation_templates) as unknown as {
       alert_days: number[];
     } | null;
 
@@ -112,6 +123,10 @@ export default function UploadProofPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         Ajouter une preuve
       </h1>
+      <p className="text-sm text-gray-500 mb-6 -mt-2">
+        Une empreinte <strong>SHA-256</strong> du fichier est calculée dans votre
+        navigateur et enregistrée avec le dépôt (intégrité, traçabilité).
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (

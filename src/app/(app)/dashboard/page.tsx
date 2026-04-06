@@ -18,7 +18,15 @@ import {
   GLOBAL_SCORE_TEXT,
 } from "@/lib/compliance-score";
 
-export default async function DashboardPage() {
+import { DashboardFilters } from "@/components/dashboard-filters";
+import { documentsManquantsPhrase } from "@/lib/format-fr";
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>;
+}) {
+  const { q: searchFilter, status: statusFilter } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -46,17 +54,22 @@ export default async function DashboardPage() {
     supabase
       .from("obligations")
       .select(
-        "*, sites(name), employees(full_name), obligation_templates(*), proofs(*)"
+        "*, sites(name), employees(full_name), obligation_templates(*), custom_obligation_templates(*), proofs(*, profiles(full_name))"
       )
       .eq("org_id", orgId),
   ]);
 
   const sites = sitesResult.data || [];
   const employees = employeesResult.data || [];
-  const obligations = obligationsResult.data || [];
+  const obligations = (obligationsResult.data || []).map(o => ({
+    ...o,
+    template: o.obligation_templates || o.custom_obligation_templates,
+    template_name: (o.obligation_templates as any)?.name || (o.custom_obligation_templates as any)?.name,
+    applies_to: (o.obligation_templates as any)?.applies_to || (o.custom_obligation_templates as any)?.applies_to
+  }));
 
   const orgObligations = obligations.filter(
-    (o) => (o.obligation_templates as { applies_to: string } | null)?.applies_to === "organization"
+    (o) => o.applies_to === "organization"
   );
 
   // Scores
@@ -66,6 +79,21 @@ export default async function DashboardPage() {
   function getSiteScore(siteId: string) {
     const siteObs = obligations.filter((o) => o.site_id === siteId);
     return computeSiteScore(countsByStatus(siteObs));
+  }
+
+  // Filtrage des sites
+  let filteredSites = sites;
+  if (searchFilter) {
+    filteredSites = filteredSites.filter((s) => 
+      s.name.toLowerCase().includes(searchFilter.toLowerCase())
+    );
+  }
+  
+  if (statusFilter && statusFilter !== "all") {
+    filteredSites = filteredSites.filter((s) => {
+      const score = getSiteScore(s.id);
+      return score.worstStatus === statusFilter;
+    });
   }
 
   const urgentObligations = obligations
@@ -142,7 +170,7 @@ export default async function DashboardPage() {
               >
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    {(o.obligation_templates as { name: string } | null)?.name}
+                    {o.template_name}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <StatusBadge status={o.status as ObligationStatus} />
@@ -150,6 +178,11 @@ export default async function DashboardPage() {
                       <span className="text-[10px] text-gray-500">
                         Échéance :{" "}
                         {new Date(o.due_date).toLocaleDateString("fr-FR")}
+                      </span>
+                    )}
+                    {o.custom_obligation_templates && (
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary ring-1 ring-inset ring-primary/20">
+                        Personnalisée
                       </span>
                     )}
                   </div>
@@ -177,25 +210,49 @@ export default async function DashboardPage() {
               href="/sites"
               className="text-sm font-medium text-primary hover:text-primary-dark"
             >
-              Voir tout
+              Gérer les sites
             </Link>
           </div>
+          <div className="p-4 border-b border-gray-50 bg-gray-50/30">
+            <DashboardFilters />
+          </div>
           <div className="divide-y divide-gray-50">
-            {sites.length === 0 ? (
+            {filteredSites.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-gray-400">
-                Aucun site ajouté.{" "}
-                <Link href="/sites/new" className="text-primary hover:underline">
-                  Ajouter un site
-                </Link>
+                {searchFilter || statusFilter ? "Aucun site ne correspond aux filtres." : "Aucun site ajouté."}{" "}
+                {!searchFilter && !statusFilter && (
+                  <Link href="/sites/new" className="text-primary hover:underline">
+                    Ajouter un site
+                  </Link>
+                )}
               </div>
             ) : (
-              sites.map((site) => {
+              filteredSites.map((site) => {
                 const siteScore = getSiteScore(site.id);
                 const colors = SITE_CARD_COLORS[siteScore.worstStatus];
+                const statLabels: string[] = [];
+                if (siteScore.valid > 0) {
+                  statLabels.push(`${siteScore.valid} en règle`);
+                }
+                if (siteScore.expiring_soon > 0) {
+                  statLabels.push(`${siteScore.expiring_soon} expire bientôt`);
+                }
+                if (siteScore.expired > 0) {
+                  statLabels.push(`${siteScore.expired} expiré${siteScore.expired > 1 ? "s" : ""}`);
+                }
+                if (siteScore.missing > 0) {
+                  statLabels.push(
+                    `${siteScore.missing} manquant${siteScore.missing > 1 ? "s" : ""}`
+                  );
+                }
+                const ariaSite = `Site ${site.name}, conformité ${siteScore.score} pour 100${
+                  statLabels.length ? ` — ${statLabels.join(", ")}` : ""
+                }`;
                 return (
                   <Link
                     key={site.id}
                     href={`/sites/${site.id}`}
+                    aria-label={ariaSite}
                     className={`flex items-center gap-3 pl-3 pr-5 py-3.5 hover:bg-gray-50 transition-colors border-l-4 ${colors.leftBorder}`}
                   >
                     <div className="min-w-0 flex-1">
@@ -220,7 +277,11 @@ export default async function DashboardPage() {
                         )}
                         {siteScore.missing > 0 && (
                           <span className="text-gray-400">
-                            ? {siteScore.missing}
+                            <span className="sr-only">Manquants : </span>
+                            <span aria-hidden className="select-none">
+                              ?
+                            </span>{" "}
+                            {siteScore.missing}
                           </span>
                         )}
                         {siteScore.total === 0 && (
@@ -250,7 +311,7 @@ export default async function DashboardPage() {
             </h2>
             {urgentObligations.length > 0 && (
               <Link
-                href="/obligations?status=expired"
+                href="/obligations"
                 className="text-sm font-medium text-primary hover:text-primary-dark"
               >
                 Voir tout
@@ -263,9 +324,7 @@ export default async function DashboardPage() {
                 Aucune échéance urgente.
                 {globalCounts.missing > 0 && (
                   <p className="mt-1 text-xs text-gray-400">
-                    {globalCounts.missing} document
-                    {globalCounts.missing > 1 ? "s" : ""} manquant
-                    {globalCounts.missing > 1 ? "s" : ""} —{" "}
+                    {documentsManquantsPhrase(globalCounts.missing)} —{" "}
                     <Link
                       href="/obligations?status=missing"
                       className="text-primary hover:underline"
@@ -284,14 +343,13 @@ export default async function DashboardPage() {
                 >
                   <StatusDot status={obligation.status as ObligationStatus} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {
-                        (
-                          obligation.obligation_templates as {
-                            name: string;
-                          } | null
-                        )?.name
-                      }
+                    <p className="text-sm font-medium text-gray-900 truncate flex items-center gap-2">
+                      {obligation.template_name}
+                      {obligation.custom_obligation_templates && (
+                        <span className="inline-flex items-center rounded-full bg-primary/10 px-1 py-0.5 text-[8px] font-medium text-primary ring-1 ring-inset ring-primary/20">
+                          P
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-gray-500">
                       {(

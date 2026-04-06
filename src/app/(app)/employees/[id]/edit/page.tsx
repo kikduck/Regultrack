@@ -7,12 +7,16 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { Site } from "@/lib/types/database";
 
+import { JobTitleSelect } from "@/components/job-title-select";
+
 export default function EditEmployeePage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [jobTitleId, setJobTitleId] = useState<string | null>(null);
   const [siteId, setSiteId] = useState("");
   const [sites, setSites] = useState<Site[]>([]);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +41,7 @@ export default function EditEmployeePage() {
         .single();
 
       if (!profile?.org_id) return;
+      setOrgId(profile.org_id);
 
       const [employeeResult, sitesResult] = await Promise.all([
         supabase
@@ -57,6 +62,7 @@ export default function EditEmployeePage() {
         setFullName(employeeResult.data.full_name);
         setEmail(employeeResult.data.email || "");
         setJobTitle(employeeResult.data.job_title);
+        setJobTitleId(employeeResult.data.job_title_id);
         setSiteId(employeeResult.data.site_id);
       }
 
@@ -87,6 +93,7 @@ export default function EditEmployeePage() {
         full_name: fullName,
         email: email || null,
         job_title: jobTitle,
+        job_title_id: jobTitleId,
       })
       .eq("id", employeeId);
 
@@ -149,20 +156,20 @@ export default function EditEmployeePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Poste / Fonction
           </label>
-          <select
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
-          >
-            <option value="agent">Agent de sécurité</option>
-            <option value="agent_ssiap">Agent SSIAP</option>
-            <option value="chef_poste">Chef de poste</option>
-            <option value="responsable">Responsable d&apos;agence</option>
-            <option value="administratif">Administratif</option>
-          </select>
+          {orgId && (
+            <JobTitleSelect
+              value={jobTitle}
+              jobTitleId={jobTitleId}
+              onChange={(name, id) => {
+                setJobTitle(name);
+                setJobTitleId(id);
+              }}
+              orgId={orgId}
+            />
+          )}
         </div>
 
         <div>

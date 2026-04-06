@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const { data: rows, error: fetchError } = await supabase
     .from("obligations")
     .select(
-      "id, status, due_date, obligation_templates(alert_days)"
+      "id, status, due_date, obligation_templates(alert_days), custom_obligation_templates(alert_days)"
     )
     .not("due_date", "is", null);
 
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   for (const row of rows || []) {
     if (row.status === "missing") continue;
 
-    const template = row.obligation_templates as unknown as {
+    const template = (row.obligation_templates || row.custom_obligation_templates) as unknown as {
       alert_days: number[];
     } | null;
 
