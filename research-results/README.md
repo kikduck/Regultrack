@@ -35,7 +35,8 @@ Documentation utile :
 
 - Python 3.10+
 - `pip install -r research-results/requirements.txt` (minimum : `requests`)
-- **Ollama** avec le modèle indiqué par `OLLAMA_MODEL` (défaut `gemma4:26b`) ou surcharge via variable d’environnement
+- **Ollama** démarré (`ollama serve`) avec le modèle indiqué par `OLLAMA_MODEL` (défaut `gemma4:26b`). Le script appelle `GET /api/tags` sur `OLLAMA_HOST` ou l’hôte dérivé de `OLLAMA_URL` **avant** les requêtes Brave. Si la synthèse échoue, **aucun `.md` n’est écrit** (évite les fiches contenant uniquement `[Erreur Ollama …]`).
+- Variables optionnelles : `OLLAMA_URL` (défaut `http://localhost:11434/api/chat`), `OLLAMA_HOST` (ex. `http://localhost:11434`), `OLLAMA_MODEL`.
 
 ```bash
 cd research-results

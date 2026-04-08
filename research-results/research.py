@@ -386,6 +386,44 @@ def fetch_context_legacy_ddg_scrape(query: str) -> str:
     return "\n\n".join(context_parts)
 
 
+def get_ollama_base_url() -> str:
+    """Base HTTP pour /api/tags et /api/chat (OLLAMA_HOST ou dérivé de OLLAMA_URL)."""
+    env = os.environ.get("OLLAMA_HOST", "").strip().rstrip("/")
+    if env:
+        return env
+    u = OLLAMA_URL.rstrip("/")
+    if "/api/chat" in u:
+        return u.split("/api/chat", 1)[0].rstrip("/") or "http://localhost:11434"
+    return "http://localhost:11434"
+
+
+def check_ollama_reachable() -> tuple[bool, str]:
+    """Vérifie qu'Ollama répond avant de consommer des quotas Brave."""
+    base = get_ollama_base_url()
+    url = f"{base}/api/tags"
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            return True, base
+        return False, f"HTTP {r.status_code} sur {url}"
+    except requests.RequestException as e:
+        return False, str(e)
+
+
+def synthesis_failed(text: str) -> bool:
+    """True si call_ollama n'a pas produit une synthèse exploitable."""
+    t = (text or "").strip()
+    if not t:
+        return True
+    if t.startswith("[Erreur Ollama"):
+        return True
+    if "HTTPConnectionPool" in t and "11434" in t:
+        return True
+    if "Failed to establish a new connection" in t:
+        return True
+    return False
+
+
 def call_ollama(prompt: str, stream: bool = True) -> str:
     payload = {
         "model": MODEL,
@@ -439,12 +477,13 @@ def research_one(
     *,
     brave_key: str | None,
     force_ddg: bool,
-) -> tuple[str, str]:
+) -> tuple[str, str, bool]:
     """
-    Retourne (contenu synthétisé, libellé source pour métadonnées fiche .md).
+    Retourne (contenu synthétisé, libellé source pour métadonnées fiche .md, succès).
+    Si succès est False, l'appelant ne doit pas écrire le .md (fiche à refaire).
     """
     context = ""
-    source_note = "Brave LLM Context"
+    source_note = "Brave Web Search"
 
     if force_ddg:
         print(f"\n  → Recherche (mode legacy DDG+scrape) : {query[:60]}...")
@@ -458,7 +497,9 @@ def research_one(
         else:
             print(f"\n  → Brave LLM Context : {query[:60]}...")
             context = fetch_brave_llm_context(query, brave_key)
-            if not context.strip():
+            if context.strip():
+                source_note = "Brave LLM Context"
+            else:
                 print("  Contexte vide — repli Brave Web Search (extra_snippets)...")
                 context = fetch_brave_web_search_context(query, brave_key)
                 source_note = "Brave Web Search"
@@ -468,16 +509,22 @@ def research_one(
             source_note = "DuckDuckGo + scrape (repli)"
     else:
         print("\n  Erreur : BRAVE_API_KEY manquante. Définissez-la ou utilisez --fallback-ddg.")
-        return "[Aucune clé Brave : configurez BRAVE_API_KEY dans .env.local ou l'environnement.]", "—"
+        return "[Aucune clé Brave : configurez BRAVE_API_KEY dans .env.local ou l'environnement.]", "—", False
 
     if not context.strip():
-        return "[Aucun résultat de recherche.]", source_note
+        return "[Aucun résultat de recherche.]", source_note, False
 
     prompt = prompt_template.format(focus=focus, context=context[:CONTEXT_CHAR_BUDGET])
 
     print(f"  → Synthèse avec Ollama ({MODEL})...")
     text = call_ollama(prompt, stream=True)
-    return text, source_note
+    if synthesis_failed(text):
+        print(
+            "\n  Échec synthèse Ollama — fiche non enregistrée. "
+            f"Vérifiez que Ollama tourne ({get_ollama_base_url()}) et que le modèle « {MODEL} » est disponible (`ollama pull {MODEL}`)."
+        )
+        return text, source_note, False
+    return text, source_note, True
 
 
 def save_result(
@@ -520,6 +567,11 @@ def parse_args():
         "--fallback-ddg",
         action="store_true",
         help="Ne pas appeler Brave : ancien flux DuckDuckGo + scraping (sans BRAVE_API_KEY).",
+    )
+    p.add_argument(
+        "--skip-ollama-check",
+        action="store_true",
+        help="Ne pas vérifier GET /api/tags avant la boucle (déconseillé).",
     )
     return p.parse_args()
 
@@ -567,18 +619,33 @@ def run():
         print(f"\nRien à faire — {len(queries)} fiches déjà dans {output_dir}")
         return
 
+    if not args.fallback_ddg and not args.skip_ollama_check:
+        ok, detail = check_ollama_reachable()
+        if not ok:
+            print(
+                f"\nOllama ne répond pas ({detail}).\n"
+                f"  Attendu : {get_ollama_base_url()} (API /api/chat pour le modèle « {MODEL} »).\n"
+                "  Démarrez Ollama, puis `ollama pull " + MODEL + "` si besoin.\n"
+                "  Option : --skip-ollama-check pour ignorer ce test (les fiches échoueront quand même sans serveur).\n"
+            )
+            sys.exit(1)
+
     for i, item in enumerate(todo, 1):
         print(f"\n{'─' * 60}")
         print(f"[{i}/{len(todo)}] {item['title']}")
 
-        result, source_note = research_one(
+        result, source_note, ok = research_one(
             focus=item["focus"],
             query=item["query"],
             prompt_template=prompt_template,
             brave_key=brave_key,
             force_ddg=args.fallback_ddg,
         )
-        save_result(output_dir, item["slug"], item["title"], result, item["query"], source_note)
+        if ok:
+            save_result(output_dir, item["slug"], item["title"], result, item["query"], source_note)
+        else:
+            print("  [X] Fiche non écrite — corrigez le problème puis relancez (ex. `python research.py creches 11`).")
+            sys.exit(1)
 
         if i < len(todo):
             pause = BRAVE_BETWEEN_FICHES_S if not args.fallback_ddg else 3.0
