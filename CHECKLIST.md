@@ -231,6 +231,25 @@ Les fichiers `data/prospects_*` sont ignorés par git (voir `.gitignore`).
 - [x] Landing page sécurité privée (`/landing`)
 - [x] Cron routes squelette (`send-alerts`, `update-statuses`)
 
+### Multi-secteur SaaS (préparation technique)
+
+> Objectif : pouvoir proposer **plusieurs secteurs** à l’onboarding **sans** les activer tant que les seeds métier ne sont pas prêts. Pilotage **en base** (pas seulement par variable d’environnement).
+
+- [x] **Migration** `008_saas_settings.sql` : table singleton `public.saas_settings` (`id = 1`) avec `show_sector_onboarding` (bool, défaut `false`) et `onboarding_sector_codes` (`text[]`, défaut `{securite_privee}`). **RLS** : `select` pour `authenticated` ; mise à jour réservée au **SQL dashboard / service role**.
+- [x] **API** `/api/auth/setup-org` : secteur effectif = toujours **sécurité privée** si le drapeau est `false` ; sinon validation **stricte** sur `onboarding_sector_codes` (plusieurs codes → le client doit envoyer un `sector` reconnu).
+- [x] **Page** `/setup` : liste déroulante **uniquement** si `show_sector_onboarding` **et** au moins **2** codes dans `onboarding_sector_codes`.
+- [x] **Libellés FR** des codes produit : `src/lib/sectors.ts` (codes snake_case alignés sur `organizations.sector` / `obligation_templates.sector`).
+- [ ] **Seeds** `obligation_templates` (et éventuellement pages landing) pour crèches, EHPAD, ambulances, pharmacies — **quand le contenu réglementaire est validé**.
+- [ ] **Activation** en production après seeds : exemple (à adapter) :
+
+```sql
+update public.saas_settings
+set
+  show_sector_onboarding = true,
+  onboarding_sector_codes = array['securite_privee', 'creches', 'ehpad']::text[]
+where id = 1;
+```
+
 ### Audit navigateur — écarts constatés (avril 2026)
 
 > Parcours manuel connecté : `/dashboard`, `/sites`, `/employees`, `/sites/new`, `/employees/new`, `/landing`. Objectif : noter ce qui manque ou grince dans l’UI actuelle par rapport à la vision produit (sans doublon inutile avec les phases ci-dessous — renvois indiqués).

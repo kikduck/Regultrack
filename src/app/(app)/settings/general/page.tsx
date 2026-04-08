@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sectorLabelFr } from "@/lib/sectors";
 import { Loader2, Save } from "lucide-react";
 
 export default function GeneralSettingsPage() {
@@ -85,7 +86,7 @@ export default function GeneralSettingsPage() {
               type="text"
               disabled
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed"
-              value={org?.sector === 'securite_privee' ? 'Sécurité Privée' : org?.sector || ''}
+              value={org?.sector ? sectorLabelFr(org.sector) : ""}
             />
             <p className="mt-1.5 text-xs text-gray-400 italic">
               Le secteur est défini lors de la création de votre compte et ne peut pas être modifié.

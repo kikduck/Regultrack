@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { resolveSectorForNewOrganization } from "@/lib/sectors";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { orgName?: unknown; fullName?: unknown };
+  const body = (await request.json()) as { orgName?: unknown; fullName?: unknown; sector?: unknown };
   const orgName = typeof body.orgName === "string" ? body.orgName.trim() : "";
   const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
 
@@ -18,11 +19,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nom complet et nom d’entreprise requis" }, { status: 400 });
   }
 
+  const { data: saasRow } = await supabase
+    .from("saas_settings")
+    .select("show_sector_onboarding, onboarding_sector_codes")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const showSector = saasRow?.show_sector_onboarding ?? false;
+  const allowedCodes = Array.isArray(saasRow?.onboarding_sector_codes)
+    ? (saasRow!.onboarding_sector_codes as string[])
+    : ["securite_privee"];
+
+  const resolved = resolveSectorForNewOrganization(showSector, allowedCodes, body.sector);
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: 400 });
+  }
+  const sector = resolved.sector;
+
   const admin = createAdminClient();
 
   const { data: org, error: orgError } = await admin
     .from("organizations")
-    .insert({ name: orgName, sector: "securite_privee" })
+    .insert({ name: orgName, sector })
     .select()
     .single();
 

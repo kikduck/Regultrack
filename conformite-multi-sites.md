@@ -17,7 +17,8 @@
 9. [Taille du marché](#marche)
 10. [Risques et limites](#risques)
 11. [Par où commencer](#demarrage)
-12. [Synthèse retour externe & prospection (avril 2026)](#retour-externe)
+12. [Multi-secteurs côté SaaS (drapeau produit)](#multi-secteurs-saas)
+13. [Synthèse retour externe & prospection (avril 2026)](#retour-externe)
 
 ---
 
@@ -511,9 +512,22 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 
 ---
 
+<a id="multi-secteurs-saas"></a>
+
+## 12. Multi-secteurs côté SaaS (drapeau produit)
+
+**Principe commercial :** le focus vente et la **profondeur du registre** restent sur **une niche à la fois** au démarrage (voir § 11). **Côté produit**, le code et la base sont **prêts** à accueillir d’autres verticales (crèches, EHPAD, ambulances, pharmacies, etc.) **sans** exposer un choix vide ou incomplet aux clients.
+
+- **Table** `public.saas_settings` (singleton `id = 1`) : `show_sector_onboarding` indique si le parcours `/setup` doit proposer un **choix de secteur** ; `onboarding_sector_codes` liste les **codes** autorisés (même convention que `organizations.sector` / `obligation_templates.sector`, ex. `securite_privee`, `creches`).
+- **Comportement par défaut :** `show_sector_onboarding = false` → toute nouvelle organisation reste en **sécurité privée**, comme aujourd’hui.
+- **Quand les seeds métier d’un secteur sont prêts :** ajouter les templates SQL pour ce secteur, **puis** étendre `onboarding_sector_codes` et passer `show_sector_onboarding` à `true` si tu veux un **vrai** multi-choix (l’UI n’affiche la liste que s’il y a **au moins deux** codes). Détail opérationnel et exemple SQL : **`CHECKLIST.md`**, section *Multi-secteur SaaS (préparation technique)*.
+- **Libellés** affichés (paramètres, onboarding) : `src/lib/sectors.ts` — à enrichir au fil des lancements.
+
+---
+
 <a id="retour-externe"></a>
 
-## 12. Synthèse retour externe & prospection (avril 2026)
+## 13. Synthèse retour externe & prospection (avril 2026)
 
 > Détail opérationnel (messages types, script d’export, marges, Pappers vs API publique) : **`CHECKLIST.md`**, section *Validation marché & retour consultant*.  
 > Récit **complet** de la conversation (veille juridique, marges, playbook outbound, **interprétation des exports 80.10Z / 88.91A** et arbitrage crèches vs sécurité) : [`docs/recap-conversation-consultant-prospection-donnees.md`](docs/recap-conversation-consultant-prospection-donnees.md).

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { onboardingSectorOptions, sectorLabelFr } from "@/lib/sectors";
 import { useRouter } from "next/navigation";
 import { Shield, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
 
@@ -11,6 +12,9 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSectorOnboarding, setShowSectorOnboarding] = useState(false);
+  const [sectorOptions, setSectorOptions] = useState<{ code: string; label: string }[]>([]);
+  const [selectedSector, setSelectedSector] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -31,19 +35,44 @@ export default function SetupPage() {
 
       if (profile?.org_id) {
         router.replace("/dashboard");
-      } else {
-        setFullName(profile?.full_name || "");
-        try {
-          const pendingOrg = sessionStorage.getItem("regultrack_pending_org_name");
-          if (pendingOrg) {
-            setOrgName(pendingOrg);
-            sessionStorage.removeItem("regultrack_pending_org_name");
-          }
-        } catch {
-          /* ignore */
-        }
-        setChecking(false);
+        return;
       }
+
+      setFullName(profile?.full_name || "");
+      try {
+        const pendingOrg = sessionStorage.getItem("regultrack_pending_org_name");
+        if (pendingOrg) {
+          setOrgName(pendingOrg);
+          sessionStorage.removeItem("regultrack_pending_org_name");
+        }
+      } catch {
+        /* ignore */
+      }
+
+      const { data: settings, error: settingsError } = await supabase
+        .from("saas_settings")
+        .select("show_sector_onboarding, onboarding_sector_codes")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (settingsError) {
+        console.error("[setup] saas_settings:", settingsError.message);
+      }
+
+      const show = !settingsError && (settings?.show_sector_onboarding ?? false);
+      const codesRaw = settings?.onboarding_sector_codes;
+      const codes = Array.isArray(codesRaw)
+        ? (codesRaw as string[]).filter(Boolean)
+        : ["securite_privee"];
+
+      const options = show ? onboardingSectorOptions(codes) : [];
+      setShowSectorOnboarding(show);
+      setSectorOptions(options);
+      if (show && options.length > 0) {
+        setSelectedSector(options[0].code);
+      }
+
+      setChecking(false);
     }
     checkStatus();
   }, [router]);
@@ -61,10 +90,27 @@ export default function SetupPage() {
     setError(null);
 
     try {
+      const body: { orgName: string; fullName: string; sector?: string } = {
+        orgName: company,
+        fullName: name,
+      };
+      if (showSectorOnboarding) {
+        if (sectorOptions.length > 1) {
+          if (!selectedSector) {
+            setError("Choisissez votre secteur d’activité.");
+            setLoading(false);
+            return;
+          }
+          body.sector = selectedSector;
+        } else if (sectorOptions.length === 1) {
+          body.sector = sectorOptions[0].code;
+        }
+      }
+
       const res = await fetch("/api/auth/setup-org", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgName: company, fullName: name }),
+        body: JSON.stringify(body),
         credentials: "same-origin",
       });
 
@@ -96,6 +142,11 @@ export default function SetupPage() {
       </div>
     );
   }
+
+  const baseRegBullet =
+    showSectorOnboarding && selectedSector
+      ? `Base réglementaire : ${sectorLabelFr(selectedSector)}`
+      : "Base réglementaire Sécurité privée";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 text-gray-900">
@@ -146,6 +197,29 @@ export default function SetupPage() {
                       placeholder="Ex: Sécurité Plus SARL"
                     />
                   </div>
+
+                  {showSectorOnboarding && sectorOptions.length > 1 ? (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                        Secteur d&apos;activité
+                      </label>
+                      <select
+                        required
+                        value={selectedSector}
+                        onChange={(e) => setSelectedSector(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm bg-white"
+                      >
+                        {sectorOptions.map((o) => (
+                          <option key={o.code} value={o.code}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1.5 text-xs text-gray-400">
+                        Détermine les obligations préchargées pour votre organisation.
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -153,7 +227,7 @@ export default function SetupPage() {
                 <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Inclus dans votre espace</h2>
                 <ul className="space-y-3">
                   {[
-                    "Base réglementaire Sécurité Privée",
+                    baseRegBullet,
                     "Tableau de bord multi-sites",
                     "Alertes email automatiques",
                     "Export dossier d'audit PDF"
