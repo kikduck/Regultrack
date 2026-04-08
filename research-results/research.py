@@ -151,6 +151,53 @@ def _log_brave_response(r: requests.Response) -> None:
     if not _BRAVE_LOG_REQUESTS:
         return
     print(f"  [Brave] ← HTTP {r.status_code}")
+    print(f"  [Brave] URL requête (effective) : {r.url}")
+
+
+def _log_brave_result_links(data: dict) -> None:
+    """Affiche les URLs renvoyées dans le corps JSON (Web Search ou LLM Context)."""
+    if not _BRAVE_LOG_REQUESTS:
+        return
+    seen: set[str] = set()
+    rows: list[tuple[str, str]] = []
+
+    grounding = data.get("grounding") or {}
+    for item in grounding.get("generic") or []:
+        if not isinstance(item, dict):
+            continue
+        u = (item.get("url") or "").strip()
+        if u and u not in seen:
+            seen.add(u)
+            rows.append((u, (item.get("title") or "").strip()[:80]))
+
+    web = data.get("web") or {}
+    for item in web.get("results") or []:
+        if not isinstance(item, dict):
+            continue
+        u = (item.get("url") or "").strip()
+        if u and u not in seen:
+            seen.add(u)
+            rows.append((u, (item.get("title") or "").strip()[:80]))
+
+    sources = data.get("sources")
+    if isinstance(sources, dict):
+        for u_raw, meta in sources.items():
+            u = (str(u_raw) or "").strip()
+            if u and u not in seen:
+                seen.add(u)
+                tit = ""
+                if isinstance(meta, dict):
+                    tit = (meta.get("title") or "").strip()[:80]
+                rows.append((u, tit))
+
+    if rows:
+        print(f"  [Brave] URLs renvoyées par l’API ({len(rows)}) :")
+        for i, (u, tit) in enumerate(rows, 1):
+            print(f"          {i}. {u}")
+            if tit:
+                print(f"             — {tit}")
+    else:
+        print("  [Brave] Aucune URL de résultat dans le JSON (réponse vide ou format inattendu).")
 
 
 def _disable_brave_llm_context_if_not_in_plan(r: requests.Response) -> bool:
@@ -313,6 +360,9 @@ def fetch_brave_llm_context(query: str, api_key: str, timeout: int = 45) -> str:
         print(f"  [Brave LLM Context] Erreur : {e}")
         return ""
 
+    if r.status_code < 400:
+        _log_brave_result_links(data)
+
     grounding = data.get("grounding") or {}
     generic = grounding.get("generic") or []
     parts: list[str] = []
@@ -354,6 +404,8 @@ def fetch_brave_web_search_context(query: str, api_key: str, timeout: int = 30) 
     except requests.RequestException as e:
         print(f"  [Brave Web Search] Erreur : {e}")
         return ""
+
+    _log_brave_result_links(data)
 
     web = data.get("web") or {}
     results = web.get("results") or []
