@@ -54,7 +54,8 @@ Le script reprend les fiches **déjà présentes** (il ne réécrit pas les `.md
 
 **Dépannage**
 
-- **HTTP 400** sur LLM Context : souvent requête `q` trop longue (limite ~400 caractères / 50 mots côté Brave) — le script tronque désormais automatiquement ; en cas d’échec persistant, vérifiez que votre abonnement inclut bien [LLM Context](https://api-dashboard.search.brave.com/documentation/services/llm-context) (sinon 400/403 selon le compte).
+- **`OPTION_NOT_IN_PLAN` (HTTP 400)** : l’option [LLM Context](https://api-dashboard.search.brave.com/documentation/services/llm-context) n’est **pas** incluse dans votre forfait Brave. Le script **détecte ce code une fois**, affiche une note, puis n’appelle plus LLM Context pendant la session et utilise uniquement [Web Search](https://api-dashboard.search.brave.com/documentation/services/web-search). Pour forcer ce mode dès le départ : `BRAVE_WEB_SEARCH_ONLY=1` dans l’environnement ou `.env.local`.
+- **Autres HTTP 400** sur LLM Context : parfois requête `q` trop longue — le script tronque automatiquement (~380 caractères / 48 mots).
 - **HTTP 429** : quota ou débit — le script espace les appels (~0,55 s entre requêtes Brave) et **6 s entre chaque fiche** par défaut. Ajustez avec la variable d’environnement `BRAVE_BETWEEN_FICHES_S` (ex. `12` si besoin).
 - **Repli DDG** : les requêtes sont biaisées vers `legifrance.gouv.fr`, `service-public.fr`, etc., pour limiter le hors-sujet géographique.
 

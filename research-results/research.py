@@ -57,9 +57,14 @@ BRAVE_Q_MAX_WORDS = 48
 # Débit : ~2 req/s sur le plan gratuit — espacer les appels et retenter les 429.
 BRAVE_MIN_INTERVAL_S = 0.55
 BRAVE_BETWEEN_FICHES_S = float(os.environ.get("BRAVE_BETWEEN_FICHES_S", "6"))
+# Forcer Web Search uniquement (équivalent à détection OPTION_NOT_IN_PLAN).
+_BRAVE_WEB_SEARCH_ONLY = os.environ.get("BRAVE_WEB_SEARCH_ONLY", "").lower() in ("1", "true", "yes")
 # ──────────────────────────────────────────────
 
 _last_brave_call_monotonic: float = 0.0
+# LLM Context désactivé après OPTION_NOT_IN_PLAN ou si BRAVE_WEB_SEARCH_ONLY.
+_BRAVE_LLM_CONTEXT_UNAVAILABLE: bool = _BRAVE_WEB_SEARCH_ONLY
+_BRAVE_LLM_PLAN_NOTICE_SHOWN: bool = False
 
 
 def _throttle_brave() -> None:
@@ -90,6 +95,38 @@ def _brave_headers(api_key: str) -> dict[str, str]:
         "Accept": "application/json",
         "Accept-Encoding": "gzip",
     }
+
+
+def _brave_api_error_code(r: requests.Response) -> str | None:
+    try:
+        data = r.json()
+        err = data.get("error")
+        if isinstance(err, dict):
+            return err.get("code")
+    except Exception:
+        pass
+    return None
+
+
+def _disable_brave_llm_context_if_not_in_plan(r: requests.Response) -> bool:
+    """
+    Brave renvoie code OPTION_NOT_IN_PLAN si l'option LLM Context n'est pas souscrite.
+    Voir https://api-dashboard.search.brave.com/documentation/services/llm-context
+    """
+    global _BRAVE_LLM_CONTEXT_UNAVAILABLE, _BRAVE_LLM_PLAN_NOTICE_SHOWN
+    code = _brave_api_error_code(r)
+    if code != "OPTION_NOT_IN_PLAN":
+        return False
+    _BRAVE_LLM_CONTEXT_UNAVAILABLE = True
+    if not _BRAVE_LLM_PLAN_NOTICE_SHOWN:
+        _BRAVE_LLM_PLAN_NOTICE_SHOWN = True
+        print(
+            "  Note : LLM Context n’est pas inclus dans votre abonnement Brave (OPTION_NOT_IN_PLAN).\n"
+            "     Passage automatique à **Web Search** uniquement pour cette session.\n"
+            "     Pour activer LLM Context : surgradez le plan sur https://api-dashboard.search.brave.com/\n"
+            "     Ou définissez BRAVE_WEB_SEARCH_ONLY=1 pour éviter tout appel LLM Context."
+        )
+    return True
 
 
 def _brave_request(
@@ -165,6 +202,9 @@ def fetch_brave_llm_context(query: str, api_key: str, timeout: int = 45) -> str:
     Brave LLM Context : extraits pertinents par URL (pas de scrape local).
     Voir https://api-dashboard.search.brave.com/documentation/services/llm-context
     """
+    if _BRAVE_LLM_CONTEXT_UNAVAILABLE:
+        return ""
+
     q = clamp_brave_query(query)
     if not q:
         return ""
@@ -190,9 +230,11 @@ def fetch_brave_llm_context(query: str, api_key: str, timeout: int = 45) -> str:
         if r is None:
             return ""
         if r.status_code >= 400:
+            if _disable_brave_llm_context_if_not_in_plan(r):
+                return ""
             hint = (r.text or "")[:400].replace("\n", " ")
             print(f"  [Brave LLM Context] HTTP {r.status_code} — {hint or r.reason}")
-            # Repli GET minimal (certains comptes n'acceptent que GET)
+            # Repli GET minimal (certains comptes n'acceptent que GET) — inutile si OPTION_NOT_IN_PLAN
             if r.status_code == 400:
                 _throttle_brave()
                 r2 = _brave_request(
@@ -209,6 +251,8 @@ def fetch_brave_llm_context(query: str, api_key: str, timeout: int = 45) -> str:
                 )
                 if r2 is None or r2.status_code >= 400:
                     if r2 is not None:
+                        if _disable_brave_llm_context_if_not_in_plan(r2):
+                            return ""
                         h2 = (r2.text or "")[:400].replace("\n", " ")
                         print(f"  [Brave LLM Context] GET fallback HTTP {r2.status_code} — {h2 or r2.reason}")
                     return ""
@@ -407,12 +451,17 @@ def research_one(
         context = fetch_context_legacy_ddg_scrape(query)
         source_note = "DuckDuckGo + scrape"
     elif brave_key:
-        print(f"\n  → Brave LLM Context : {query[:60]}...")
-        context = fetch_brave_llm_context(query, brave_key)
-        if not context.strip():
-            print("  Contexte vide — repli Brave Web Search (extra_snippets)...")
+        if _BRAVE_LLM_CONTEXT_UNAVAILABLE:
+            print(f"\n  → Brave Web Search : {query[:60]}...")
             context = fetch_brave_web_search_context(query, brave_key)
             source_note = "Brave Web Search"
+        else:
+            print(f"\n  → Brave LLM Context : {query[:60]}...")
+            context = fetch_brave_llm_context(query, brave_key)
+            if not context.strip():
+                print("  Contexte vide — repli Brave Web Search (extra_snippets)...")
+                context = fetch_brave_web_search_context(query, brave_key)
+                source_note = "Brave Web Search"
         if not context.strip():
             print("  Toujours vide — repli DDG + scrape si disponible...")
             context = fetch_context_legacy_ddg_scrape(query)
