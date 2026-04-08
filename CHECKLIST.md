@@ -5,6 +5,77 @@
 
 ---
 
+## Validation marché & retour consultant (avril 2026)
+
+> Synthèse d’un échange avec un consultant externe, complétée (veille IA vs risque juridique, marges bootstrap, prospection). **Alignement avec la réalité du dépôt :** une partie du produit est déjà codée — la priorité commerciale reste toutefois la **découverte terrain** sur le vocabulaire et les workflows réels.
+
+### Verdict global
+
+| Question | Synthèse |
+|----------|-----------|
+| **Viable ?** | Oui — problème réel, marché sous-outillé, exécution produit sérieuse. |
+| **Proposition juste ?** | Largement oui — positionnement obligation vs GED, tarifs cohérents, analyse EnRègle honnête. |
+| **Marché « intéressant » ?** | Oui pour un **bootstrap rentable** (ordre de grandeur **500 k€–1 M€ ARR**), pas comme pitch de levée sans élargir le scope ou les pays. |
+| **Priorité immédiate** | **~10 entretiens découverte** avec de vrais prospects (**sécurité privée** en premier choix conseillé) — comprendre si le problème modélisé correspond au vécu, avant d’empiler back-office / IA. |
+
+### Points forts (à capitaliser)
+
+- Problème et symptômes crédibles (Excel multi-sites, pièces par mail, contrôle inopiné).
+- Distinction **GED vs obligation** — *« le document n’est que la preuve que l’obligation est remplie »* : ligne de défense produit et commerciale.
+- Angles de vente pertinents : **coût d’incident**, temps admin déjà brûlé, cible **3e–4e site**.
+- Séquence technique saine : MVP → onboarding assisté → calibreur IA (l’IA n’est pas en entrée de gamme).
+- Concurrence : horizontal bas coût vs vertical profond — tenable si la **profondeur sectorielle** tient dans le temps.
+
+### Points faibles / risques (à traiter explicitement)
+
+1. **Build avant validation** — Le plan mentionnait des entretiens avant code ; le rythme de build récent doit être **compensé** par une vague courte d’entretiens **découverte** (peu de pitch au premier contact).
+2. **Taille du marché vs ambition** — SAM FR élevé sur le papier ; taux de conversion agressifs en outbound froid → viser plutôt **solo / petite équipe** rentable qu’une structure lourde sans levée ni distribution.
+3. **« Moat » réglementaire** — Base d’obligations = surtout **moat d’effort** ; un concurrent motivé peut rattraper. Le vrai avantage = **clients, confiance, relation**. Mise à jour réglementaire = **charge récurrente** + **risque réputationnel / juridique** si un template est faux au moment d’un contrôle.
+4. **Cycle de vente** — Fenêtre 4–10 semaines **optimiste** sans sponsor budget ; prévoir un **pipeline large** (ordre de grandeur **30–40 prospects actifs** sur le moyen terme, pas 10).
+5. **Palier 300–500 €/mois** — Perception « cher vs stack bureautique » possible ; **démo centrée sur le flux métier** + **onboarding irréprochable** pour limiter le churn.
+
+### Risque juridique — nuance sur la veille IA (R4 / B5)
+
+- La **veille semi-automatique** (URLs officielles, diff, alerte interne, **validation humaine**) sert surtout à détecter un **changement** par rapport à la dernière version archivée.
+- Elle **ne corrige pas** une erreur **dès l’origine** (fréquence fausse, obligation manquante, mauvaise interprétation) : on compare ancien / nouveau, pas « texte archivé / réalité juridique complète ».
+- **Mitigations :** (1) validation initiale par un **professionnel du secteur** (échange contre pilote ou quelques mois offerts) ; (2) **CGU** claires : outil d’aide au suivi, **pas** conseil juridique ; (3) process interne sur les seeds. La veille IA est une **couche 2**, pas la protection principale.
+
+### Marges (ordre de grandeur, bootstrap, avant impôt)
+
+- **Coûts variables** (Supabase, Vercel, Resend, APIs LLM, monitoring) : souvent **quelques % du MRR** à l’échelle — **marge brute logicielle** très élevée.
+- **Marge nette** dépend surtout du **temps fondateur** et des **recrutements** : solo vers **500 k€ ARR** souvent **~70–80 %** si charges maîtrisées (charge de travail élevée) ; **+1** poste support/vente souvent **~55–65 %** ; **~1 M€ ARR** petite équipe souvent **~65–72 %** — typique **~60–75 %** pour un B2B vertical bootstrap bien géré. *(À affiner avec expert-comptable / statut.)*
+
+### Prospection sans réseau — plan pragmatique
+
+- **Une niche d’abord** : **sécurité privée seule** au démarrage (douleur CNAPS concrète, vocabulaire cadré).
+- **Liste nominative ~50 entreprises** en ~1 semaine (boîte + décideur) avant la vague de messages. **Ne pas** viser syndicats/fédérations pour *signer* tout de suite : plutôt quand **~5 clients** et au moins un témoignage.
+- **Canal** : LinkedIn + email pro — messages **courts**, **demande d’entretien découverte** (pas de pitch initial).
+- **Entretien ~20 min** : workflow actuel, temps passé, incidents passés, manques — **démo ~10 min** seulement si l’échange est bon.
+- **Démo** : **flux** (ex. 45 agents, carte qui expire), jeux de données factices **réalistes** ; « et si la réglementation bouge ? » → **veille + templates maintenus**, argument produit.
+- **Pilotes payants** : ex. **50 %** du tarif cible sur **3 mois**, accompagnement serré — **pas gratuit**.
+
+### Pappers, scraping et alternative légale (terrain)
+
+> URL de référence type :  
+> `https://www.pappers.fr/recherche?activite=80.10Z&resultat_min=-1000000&resultat_max=100000000000&effectifs_min=10&effectifs_max=500000`  
+> Enchaîner « ouvrir chaque fiche dans le navigateur et copier » est **lourd**, **fragile** (HTML, anti-bot) et **soumis aux CGU** de Pappers — **automatiser le scraping du site sans accord écrit est déconseillé** (risques juridique et opérationnel).
+
+**Piste retenue dans ce dépôt**
+
+1. Script **`scripts/prospecting/fetch_securite_privee_sirene.py`** — interroge l’**[API Recherche d’entreprises](https://api.gouv.fr/les-api/api-recherche-entreprises)** (`recherche-entreprises.api.gouv.fr`) : accès ouvert, **User-Agent explicite**, **≤ 7 req/s** (le script espace les appels). Filtres : `activite_principale=80.10Z`, `tranche_effectif_salarie` pour se rapprocher du filtre effectifs Pappers (codes INSEE ; défaut = tranches à partir de **10–19 salariés**).
+2. **Plafonds de résultats** : si le total renvoyé semble capé, **segmenter** (ex. par `departement=`) en réutilisant les mêmes filtres — documenté dans le script / commentaires.
+3. **Champs type Pappers** (scores propriétaires, etc.) : export ou offre **commerciale** Pappers, ou **enrichissement manuel** pour les 50–100 premiers comptes — souvent acceptable en bootstrap.
+
+Exemple :
+
+```bash
+python scripts/prospecting/fetch_securite_privee_sirene.py --out data/prospects_securite_8010z.csv
+```
+
+Les fichiers `data/prospects_*` sont ignorés par git (voir `.gitignore`).
+
+---
+
 ## Architecture : 3 piliers
 
 ```
@@ -632,10 +703,13 @@ Alerte interne back-office → validation humaine obligatoire
 | 06/04/2026 | ✅ Impl. route `/alerts`, entrée sidebar, panel partagé avec `/settings/alerts` (vision : seuils défaut métier, personnalisation Phase 3.1) |
 | 06/04/2026 | 📝 Phase 2.3 — ajout spec intégrité « LuVu light » (SHA-256 + horodatage serveur, hors blockchain/TSA MVP) |
 | 06/04/2026 | ✅ Phase 2.3 impl. — historique preuves UI, SHA-256 upload, migration `005`, tests `proof-display.test.ts` |
+| 08/04/2026 | 📝 Section *Validation marché & retour consultant* + prospection API publique (`scripts/prospecting/`) ; alignement `conformite-multi-sites.md` (risques, prospection, synthèse externe) |
 
 ---
 
 ## Priorité pour signer les 3 premiers clients
+
+> **Ordre conseillé (retour consultant, avril 2026) :** avec un produit déjà démontrable, la **priorité n°1** est la **découverte terrain** (liste nominative + entretiens CNAPS / admin — voir section *Validation marché*). Le reste du plan technique ci-dessous reste la **fondation produit** déjà largement amorcée.
 
 **Base de connaissances :** fondation de tout le reste
 

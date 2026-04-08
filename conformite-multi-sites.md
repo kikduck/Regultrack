@@ -17,6 +17,7 @@
 9. [Taille du marché](#marche)
 10. [Risques et limites](#risques)
 11. [Par où commencer](#demarrage)
+12. [Synthèse retour externe & prospection (avril 2026)](#retour-externe)
 
 ---
 
@@ -431,13 +432,19 @@ Si tu simplifies trop pour faire des ventes rapides, tu perds la différenciatio
 La tentation de vendre à "toutes les PME multi-sites" est forte. Ça dilue le message, multiplie les cas d'usage à supporter, et rend la vente plus difficile. Rester sur 1–2 niches au moins jusqu'à 500 k€ ARR.
 
 **Risque 3 — Cycle de vente long**
-Les décisions dans ces structures prennent du temps. Il faut un pipeline de 20–30 prospects actifs pour avoir des signatures régulières. La prospection doit être un travail hebdomadaire, pas ponctuel.
+Les décisions dans ces structures prennent du temps. Il faut un pipeline de **20–40 prospects actifs** (ordre de grandeur réaliste en outbound froid) pour des signatures régulières ; une fenêtre « 4–10 semaines » peut **glisser à plusieurs mois** si le contact n’a pas le budget. La prospection doit être un travail hebdomadaire, pas ponctuel.
 
 **Risque 4 — Mise à jour réglementaire**
-Les obligations changent. Une réforme sectorielle peut rendre une partie du registre obsolète. Prévoir un process de veille et de mise à jour, et facturer la valeur de ce service dans le prix.
+Les obligations changent. Une réforme sectorielle peut rendre une partie du registre obsolète. Prévoir un process de veille et de mise à jour, et facturer la valeur de ce service dans le prix. **Corollaire :** une erreur dans les templates (fréquence, périmètre, obligation manquante) expose à un **risque réputationnel et juridique** si un client s’appuie sur l’outil pour un contrôle — la **veille IA** (diff sur sources officielles) aide surtout sur les **changements** ; elle ne remplace pas une **validation métier initiale** ni des **CGU** claires (outil de suivi, pas conseil juridique).
 
 **Risque 5 — Résistance à l'adoption sur les sites**
 Le siège est convaincu, mais les responsables de site trouvent le changement contraignant. L'onboarding doit être rapide (moins de 30 minutes) et le dépôt de documents doit être faisable depuis un téléphone en 3 clics.
+
+**Risque 6 — « Moat » surtout opérationnel**
+La connaissance encodée (CNAPS, PMI, etc.) est un **avantage d’effort** plus qu’un verrou technologique : un concurrent motivé peut reconstituer une base. L’avantage durable vient de la **relation client**, de la **qualité du support** et de la **distribution** (partenariats, références), pas seulement du SQL.
+
+**Risque 7 — Palier prix bas vs perception**
+À **300–500 €/mois**, certaines structures de taille moyenne comparent inconsciemment à la stack bureautique (messagerie, drive). Le **ROI** doit être **montré en démo** (flux métier, incident évité), pas seulement annoncé sur une grille tarifaire.
 
 ---
 
@@ -460,15 +467,25 @@ Les deux meilleures options :
 
 **Recommandation :** commencer par la sécurité privée si tu veux un argument de vente très concret (carte CNAPS = blocage immédiat si expirée). Commencer par les crèches si tu préfères un secteur où le lien avec la qualité du service aux enfants renforce l'argument éthique et réputationnel.
 
-### Étape 2 — 5 entretiens prospects avant d'écrire du code
+### Étape 2 — Entretiens prospects (idéalement avant le code ; sinon **tout de suite**)
 
-Appeler 5 directeurs de réseaux de ta niche. Pas pour vendre. Pour poser 3 questions :
+L’ordre idéal reste : **valider le problème avant d’investir massivement**. Si une partie du produit est déjà construite (ce qui peut être pertinent avec des outils de dev rapides), la **priorité** devient : **ne pas ajouter** de surface produit sans **5 à 10 entretiens découverte** dans **une seule niche** au départ (recommandation terrain : **sécurité privée** en premier — douleur CNAPS très concrète).
 
-1. "Comment vous suivez aujourd'hui les formations et agréments de vos sites ?"
+Pas pour vendre au premier contact. Exemples de questions :
+
+1. "Comment vous suivez aujourd'hui les formations et agréments de vos sites ?" (ou cartes / habilitations CNAPS selon le secteur)
 2. "Vous avez déjà eu un incident lié à un document expiré ou manquant ?"
-3. "Si vous aviez un tableau de bord qui vous disait en temps réel ce qui est à risque, vous payeriez combien pour ça ?"
+3. "Qu’est-ce qui vous manque le plus dans votre système actuel ?" (laisser formuler sans guider vers ton produit)
+4. "Si quelqu’un vous montrait un tableau de bord avec le statut [CNAPS / PMI / …] par personne ou par site, qu’est-ce que ça changerait dans votre quotidien ?"
 
-Ce que tu entends conditionne ce que tu construis.
+À la fin d’un bon échange : proposer une **courte démo** (flux métier, pas inventaire de menus). Ce que tu entends **valide ou corrige** ce que tu as déjà modélisé.
+
+### Étape 2 bis — Liste nominative et canaux (sans réseau au départ)
+
+- Objectif : **~50 entreprises** avec nom + décideur plausible en ~1 semaine (LinkedIn, annuaires, bases publiques).
+- **API publique** : l’**[API Recherche d’entreprises](https://api.gouv.fr/les-api/api-recherche-entreprises)** permet de lister les unités légales en **80.10Z** avec filtres d’effectif, sans scraper les sites agrégateurs — voir script `scripts/prospecting/fetch_securite_privee_sirene.py` et la section correspondante dans `CHECKLIST.md`. Le **scraping automatisé de Pappers** est déconseillé sans accord (CGU, fragilité).
+- Messages LinkedIn / email : **courts**, une **demande d’échange** pour comprendre le métier, **pas** un pitch produit en ouverture.
+- Syndicats / fédérations : plutôt pour la **distribution** une fois **plusieurs clients** et un **témoignage**, pas comme premier levier pour signer.
 
 ### Étape 3 — MVP en 6–8 semaines
 
@@ -494,6 +511,30 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 
 ---
 
+<a id="retour-externe"></a>
+
+## 12. Synthèse retour externe & prospection (avril 2026)
+
+> Détail opérationnel (messages types, script d’export, marges, Pappers vs API publique) : **`CHECKLIST.md`**, section *Validation marché & retour consultant*.
+
+### Ce qui a été entendu — utile à garder
+
+- **Viable** : oui ; **proposition** largement juste ; **marché** suffisant pour un **bootstrap** rentable (ordre de grandeur **500 k€–1 M€ ARR**), pas pour une levée « générique » sans élargir le scope.
+- **Forces** : problème authentique, distinction obligation / GED, angles « coût d’incident » et « temps admin », séquence MVP → IA en couche avancée, lecture concurrentielle honnête.
+- **À surveiller** : validation terrain retardée par le build ; SAM vs conversion réelle ; moat surtout **effort + relation client** ; cycle de vente et pipeline ; prix bas vs perception ; **risque juridique / réputationnel** sur la justesse des templates (veille = complément, pas bouclier seul).
+
+### Prospection immédiate (rappel)
+
+- **Une niche** : démarrer par **sécurité privée** si besoin de trancher.
+- **50 comptes nominatifs** puis outbound **découverte** ; **pilotes payants** (ex. **50 %** sur **3 mois**), pas gratuit.
+- **Liste 80.10Z** : préférer l’**API Recherche d’entreprises** (script dans le dépôt) au **scraping Pappers** non autorisé.
+
+### Marges (rappel ordre de grandeur)
+
+- **Marge brute** SaaS souvent très élevée ; **marge nette** avant impôt souvent **~60–75 %** pour un vertical B2B bootstrap bien géré, selon effectifs et rémunération du fondateur — voir tableau dans `CHECKLIST.md`.
+
+---
+
 ## Résumé en une page
 
 | Quoi | Détail |
@@ -508,4 +549,4 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 | SAM France (2 niches) | 15–33 M€/an |
 | Objectif 3–4 ans | 1–3 M€ ARR en bootstrap |
 | Risque principal | Glisser vers une GED ou trop s'élargir trop vite |
-| Premier pas | 5 entretiens prospects avant d'écrire du code |
+| Premier pas | Liste nominative + 5–10 entretiens découverte (une niche) ; idéalement avant gros investissement code — sinon **immédiatement** si le MVP existe déjà |

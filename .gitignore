@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Deep research — résultats et scripts
 research-results/
+
+# Prospection — exports API (listes entreprises)
+/data/prospects_*
