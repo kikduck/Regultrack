@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,8 +31,25 @@ export function JobTitleSelect({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const supabase = createClient();
+
+  const closePanel = useCallback(() => {
+    setOpen(false);
+    setSearchTerm("");
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDownOutside(e: PointerEvent) {
+      const root = rootRef.current;
+      if (!root || root.contains(e.target as Node)) return;
+      closePanel();
+    }
+    document.addEventListener("pointerdown", onPointerDownOutside);
+    return () => document.removeEventListener("pointerdown", onPointerDownOutside);
+  }, [open, closePanel]);
 
   useEffect(() => {
     async function loadJobTitles() {
@@ -70,18 +87,17 @@ export function JobTitleSelect({
     if (data && !error) {
       setJobTitles((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
       onChange(data.name, data.id);
-      setOpen(false);
-      setSearchTerm("");
+      closePanel();
     }
     setCreating(false);
   };
 
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <div className="relative">
         <button
           type="button"
-          onClick={() => setOpen(!open)}
+          onClick={() => (open ? closePanel() : setOpen(true))}
           className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="truncate text-left">
@@ -119,8 +135,7 @@ export function JobTitleSelect({
                     type="button"
                     onClick={() => {
                       onChange(jt.name, jt.id);
-                      setOpen(false);
-                      setSearchTerm("");
+                      closePanel();
                     }}
                     className={cn(
                       "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100",
