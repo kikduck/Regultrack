@@ -44,6 +44,7 @@ next-env.d.ts
 research-results/*
 !research-results/README.md
 !research-results/research.py
+!research-results/requirements.txt
 !research-results/queries/
 !research-results/queries/**
 

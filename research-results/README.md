@@ -3,7 +3,8 @@
 ## Ce qui est versionné (Git)
 
 - `README.md` — cette convention
-- `research.py` — lanceur (DuckDuckGo + scrape + Ollama)
+- `research.py` — lanceur (**Brave Search API** + Ollama local)
+- `requirements.txt` — dépendances Python minimales
 - `queries/*.py` — **liste des questions** par secteur (alignée sur les seeds à fiabiliser)
 
 ## Ce qui reste local (ignoré par Git)
@@ -15,19 +16,41 @@ L’assistant / l’IDE **peuvent lire** tout le dossier sur votre disque ; seul
 
 ## Lancer la deep research (machine locale)
 
-Prérequis : Python avec `requests`, `beautifulsoup4`, `duckduckgo-search`, et **Ollama** avec le modèle configuré dans `research.py` (par défaut `gemma4:26b`).
+### Clé Brave
+
+1. Créez une clé sur le [dashboard Brave Search API](https://api-dashboard.search.brave.com/).
+2. Dans la **racine du dépôt** Regultrack, ajoutez dans `.env.local` (ou `.env`) :
+
+   `BRAVE_API_KEY=votre_clé`
+
+   Le script charge automatiquement ces fichiers (sans écraser les variables déjà définies dans le shell).
+
+Documentation utile :
+
+- [Web Search](https://api-dashboard.search.brave.com/documentation/services/web-search)
+- [LLM Context](https://api-dashboard.search.brave.com/documentation/services/llm-context) (utilisé en priorité — contenu pré-extrait, sans scrape)
+- [Answers](https://api-dashboard.search.brave.com/documentation/services/answers) — non utilisé ici (synthèse faite par **Ollama** local ; Answers pourrait remplacer Ollama dans une évolution payante)
+
+### Prérequis
+
+- Python 3.10+
+- `pip install -r research-results/requirements.txt` (minimum : `requests`)
+- **Ollama** avec le modèle indiqué par `OLLAMA_MODEL` (défaut `gemma4:26b`) ou surcharge via variable d’environnement
 
 ```bash
 cd research-results
-pip install requests beautifulsoup4 duckduckgo-search
+pip install -r requirements.txt
 python research.py                     # défaut : securite-privee
 python research.py creches
 python research.py ehpad
 python research.py ambulances
 python research.py creches 01          # une seule fiche (slug commençant par 01)
+python research.py securite-privee --fallback-ddg   # sans Brave : ancien DDG + scrape
 ```
 
 Le script reprend les fiches **déjà présentes** (il ne réécrit pas les `.md` existants), sauf si vous passez un préfixe de slug pour forcer une cible.
+
+**Ordre des sources** : Brave LLM Context → si vide, Brave Web Search (`extra_snippets`) → si encore vide, repli DuckDuckGo + scrape (si `duckduckgo-search` et `beautifulsoup4` sont installés).
 
 ## Fiabiliser les seeds (workflow)
 
