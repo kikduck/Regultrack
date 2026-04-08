@@ -45,3 +45,8 @@ research-results/
 
 # Prospection — exports API (listes entreprises)
 /data/prospects_*
+/data/prospects_segments_xlsx/
+
+# Python
+__pycache__/
+*.py[cod]
