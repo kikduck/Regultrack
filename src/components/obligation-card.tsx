@@ -8,6 +8,7 @@ import {
   sortProofsNewestFirst,
   type ProofForDisplay,
 } from "@/lib/proof-display";
+import { renewalMonthsSummaryFr } from "@/lib/format-renewal";
 
 interface ObligationCardProps {
   obligation: {
@@ -103,7 +104,8 @@ export function ObligationCard({ obligation }: ObligationCardProps) {
             </div>
           )}
           <div className="text-xs text-gray-400">
-            Fréquence : tous les {template?.renewal_months} mois
+            Fréquence :{" "}
+            {template != null ? renewalMonthsSummaryFr(template.renewal_months) : "—"}
           </div>
         </div>
       </div>

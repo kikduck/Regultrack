@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Plus, HelpCircle, AlertCircle, Trash2, Edit2, ShieldCheck, User, Building, Landmark, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ObligationTemplate } from "@/lib/types/database";
+import { renewalMonthsLabelFr } from "@/lib/format-renewal";
 
 interface CustomTemplate {
   id: string;
@@ -158,7 +159,7 @@ export default function HabilitationsPage() {
                 </div>
                 <p className="text-sm text-gray-500 mt-1 line-clamp-1">{template.description}</p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Renouvellement : {template.renewal_months} mois • {template.applies_to === "employee" ? "Individuel" : template.applies_to === "site" ? "Par site" : "Organisation"}
+                  Renouvellement : {renewalMonthsLabelFr(template.renewal_months)} • {template.applies_to === "employee" ? "Individuel" : template.applies_to === "site" ? "Par site" : "Organisation"}
                 </p>
               </div>
             </div>
@@ -190,7 +191,7 @@ export default function HabilitationsPage() {
                   </div>
                   <p className="text-sm text-gray-500 mt-1 line-clamp-1">{template.description}</p>
                   <p className="text-xs text-gray-400 mt-2">
-                    Renouvellement : {template.renewal_months} mois • {template.applies_to === "employee" ? "Individuel" : template.applies_to === "site" ? "Par site" : "Organisation"}
+                    Renouvellement : {renewalMonthsLabelFr(template.renewal_months)} • {template.applies_to === "employee" ? "Individuel" : template.applies_to === "site" ? "Par site" : "Organisation"}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -260,10 +261,10 @@ export default function HabilitationsPage() {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Renouvellement (mois)</label>
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                     value={formData.renewal_months}
-                    onChange={(e) => setFormData({ ...formData, renewal_months: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, renewal_months: parseInt(e.target.value, 10) || 0 })}
                   />
                 </div>
               </div>

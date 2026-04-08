@@ -40,8 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Deep research — résultats et scripts
-research-results/
+# Deep research — résultats et scripts (sauf README de convention)
+research-results/*
+!research-results/README.md
 
 # Prospection — exports API (listes entreprises)
 /data/prospects_*
