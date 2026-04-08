@@ -40,7 +40,7 @@ warnings.filterwarnings("ignore", message=".*duckduckgo_search.*renamed.*", cate
 
 # ──────────────────────────────────────────────
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
-MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:26b")
+MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:30b-a3b-q4_K_M") #gemma4:26b
 
 BRAVE_WEB_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 BRAVE_LLM_CONTEXT_URL = "https://api.search.brave.com/res/v1/llm/context"
@@ -65,6 +65,8 @@ _last_brave_call_monotonic: float = 0.0
 # LLM Context désactivé après OPTION_NOT_IN_PLAN ou si BRAVE_WEB_SEARCH_ONLY.
 _BRAVE_LLM_CONTEXT_UNAVAILABLE: bool = _BRAVE_WEB_SEARCH_ONLY
 _BRAVE_LLM_PLAN_NOTICE_SHOWN: bool = False
+# Journal des appels HTTP Brave (réglé dans run() via BRAVE_VERBOSE / flags CLI).
+_BRAVE_LOG_REQUESTS: bool = True
 
 
 def _throttle_brave() -> None:
@@ -108,6 +110,49 @@ def _brave_api_error_code(r: requests.Response) -> str | None:
     return None
 
 
+def _truncate_for_log(s: str, max_len: int = 72) -> str:
+    t = " ".join((s or "").split())
+    if len(t) <= max_len:
+        return t
+    return t[: max_len - 1] + "…"
+
+
+def _log_brave_request(
+    method: str,
+    url: str,
+    *,
+    params: dict | None = None,
+    json_body: dict | None = None,
+) -> None:
+    """Affiche méthode, chemin API et aperçu de q (jamais la clé API)."""
+    if not _BRAVE_LOG_REQUESTS:
+        return
+    path = url.replace("https://api.search.brave.com", "")
+    if method.upper() == "POST" and json_body:
+        q = str(json_body.get("q", ""))
+        extra = (
+            f"country={json_body.get('country')} search_lang={json_body.get('search_lang')} "
+            f"count={json_body.get('count')} max_tokens={json_body.get('maximum_number_of_tokens')}"
+        )
+        print(f"  [Brave] POST {path}")
+        print(f"          q={_truncate_for_log(q)!r}")
+        print(f"          {extra}")
+    else:
+        p = dict(params or {})
+        q = str(p.pop("q", ""))
+        tail = " ".join(f"{k}={p[k]!r}" for k in sorted(p.keys()))
+        print(f"  [Brave] GET {path}")
+        print(f"          q={_truncate_for_log(q)!r}")
+        if tail:
+            print(f"          {tail}")
+
+
+def _log_brave_response(r: requests.Response) -> None:
+    if not _BRAVE_LOG_REQUESTS:
+        return
+    print(f"  [Brave] ← HTTP {r.status_code}")
+
+
 def _disable_brave_llm_context_if_not_in_plan(r: requests.Response) -> bool:
     """
     Brave renvoie code OPTION_NOT_IN_PLAN si l'option LLM Context n'est pas souscrite.
@@ -145,17 +190,21 @@ def _brave_request(
     delays = (1.0, 3.0, 8.0)
     for attempt, delay in enumerate((*delays, 0)):
         _throttle_brave()
+        _log_brave_request(method, url, params=params, json_body=json_body)
         try:
             if method.upper() == "POST" and json_body is not None:
                 r = requests.post(url, headers=headers, json=json_body, timeout=timeout)
             else:
                 r = requests.get(url, headers=headers, params=params, timeout=timeout)
         except requests.RequestException as e:
+            if _BRAVE_LOG_REQUESTS:
+                print(f"  [Brave] ← erreur réseau : {e}")
             if attempt < len(delays):
-                print(f"  [Brave] Erreur réseau, nouvel essai dans {delay}s… ({e})")
+                print(f"  [Brave] Nouvel essai dans {delay}s…")
                 time.sleep(delay)
                 continue
             raise
+        _log_brave_response(r)
         if r.status_code == 429 and attempt < len(delays):
             print(f"  [Brave] 429 Too Many Requests — attente {delay}s puis retry…")
             time.sleep(delay)
@@ -573,11 +622,29 @@ def parse_args():
         action="store_true",
         help="Ne pas vérifier GET /api/tags avant la boucle (déconseillé).",
     )
+    p.add_argument(
+        "--verbose-brave",
+        action="store_true",
+        help="Forcer l’affichage détaillé de chaque requête Brave (défaut : selon BRAVE_VERBOSE).",
+    )
+    p.add_argument(
+        "--quiet-brave",
+        action="store_true",
+        help="Masquer les lignes [Brave] (méthode, q, HTTP status).",
+    )
     return p.parse_args()
 
 
 def run():
+    global _BRAVE_LOG_REQUESTS
     args = parse_args()
+    load_env_files()
+    _BRAVE_LOG_REQUESTS = os.environ.get("BRAVE_VERBOSE", "1").lower() not in ("0", "false", "no")
+    if args.quiet_brave:
+        _BRAVE_LOG_REQUESTS = False
+    if args.verbose_brave:
+        _BRAVE_LOG_REQUESTS = True
+
     sector_key = args.sector.strip().lower()
     mod = load_sector(sector_key)
 
@@ -610,6 +677,11 @@ def run():
     print(f" Deep Research — {getattr(mod, 'SECTOR_LABEL', sector_key)}")
     mode = "Brave API + Ollama" if not args.fallback_ddg else "DDG legacy + Ollama"
     print(f" Pipeline : {mode} | Modèle local : {MODEL} | Sortie : {output_dir.name}/")
+    if not args.fallback_ddg:
+        print(
+            f" Logs Brave : {'activés' if _BRAVE_LOG_REQUESTS else 'désactivés'} "
+            f"(BRAVE_VERBOSE ou --quiet-brave / --verbose-brave)"
+        )
     print("=" * 60)
 
     if not slug_filter and done_before:

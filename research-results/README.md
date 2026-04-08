@@ -49,6 +49,8 @@ python research.py creches 01          # une seule fiche (slug commençant par 0
 python research.py securite-privee --fallback-ddg   # sans Brave : ancien DDG + scrape
 ```
 
+Chaque appel Brave affiche par défaut des lignes `[Brave] POST|GET …`, l’aperçu de `q` et le code HTTP (`← HTTP 200`). Désactiver : `BRAVE_VERBOSE=0` dans `.env.local` ou `--quiet-brave`. Forcer : `--verbose-brave`.
+
 Le script reprend les fiches **déjà présentes** (il ne réécrit pas les `.md` existants), sauf si vous passez un préfixe de slug pour forcer une cible.
 
 **Ordre des sources** : Brave LLM Context → si vide, Brave Web Search (`extra_snippets`) → si encore vide, repli DuckDuckGo + scrape (si `duckduckgo-search` / `ddgs` et `beautifulsoup4` sont installés).
