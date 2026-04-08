@@ -483,7 +483,7 @@ Pas pour vendre au premier contact. Exemples de questions :
 ### Étape 2 bis — Liste nominative et canaux (sans réseau au départ)
 
 - Objectif : **~50 entreprises** avec nom + décideur plausible en ~1 semaine (LinkedIn, annuaires, bases publiques).
-- **API publique** : l’**[API Recherche d’entreprises](https://api.gouv.fr/les-api/api-recherche-entreprises)** permet de lister les unités légales en **80.10Z** avec filtres d’effectif, sans scraper les sites agrégateurs — voir script `scripts/prospecting/fetch_securite_privee_sirene.py` et la section correspondante dans `CHECKLIST.md`. Le **scraping automatisé de Pappers** est déconseillé sans accord (CGU, fragilité).
+- **API publique** : l’**[API Recherche d’entreprises](https://api.gouv.fr/les-api/api-recherche-entreprises)** permet de lister les unités légales par NAF avec filtres d’effectif (registre multi-secteurs : `scripts/prospecting/sectors.json`, CLI `fetch_sector_prospects.py`). Documentation : **`docs/prospects/`** (méthodologie, analyses par verticale, synthèse comparative). Le **scraping automatisé de Pappers** est déconseillé sans accord (CGU, fragilité).
 - Messages LinkedIn / email : **courts**, une **demande d’échange** pour comprendre le métier, **pas** un pitch produit en ouverture.
 - Syndicats / fédérations : plutôt pour la **distribution** une fois **plusieurs clients** et un **témoignage**, pas comme premier levier pour signer.
 
@@ -515,7 +515,8 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 
 ## 12. Synthèse retour externe & prospection (avril 2026)
 
-> Détail opérationnel (messages types, script d’export, marges, Pappers vs API publique) : **`CHECKLIST.md`**, section *Validation marché & retour consultant*.
+> Détail opérationnel (messages types, script d’export, marges, Pappers vs API publique) : **`CHECKLIST.md`**, section *Validation marché & retour consultant*.  
+> Récit **complet** de la conversation (veille juridique, marges, playbook outbound, **interprétation des exports 80.10Z / 88.91A** et arbitrage crèches vs sécurité) : [`docs/recap-conversation-consultant-prospection-donnees.md`](docs/recap-conversation-consultant-prospection-donnees.md).
 
 ### Ce qui a été entendu — utile à garder
 
@@ -525,9 +526,9 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 
 ### Prospection immédiate (rappel)
 
-- **Une niche** : démarrer par **sécurité privée** si besoin de trancher.
+- **Une niche** : trancher **une** verticale pour le message ; l’avis externe a d’abord penché **sécurité privée**, puis — après **chiffrage des listes** multi-établissements — a argumenté pour **crèches** comme premier marché (voir récap lien ci-dessus).
 - **50 comptes nominatifs** puis outbound **découverte** ; **pilotes payants** (ex. **50 %** sur **3 mois**), pas gratuit.
-- **Liste 80.10Z** : préférer l’**API Recherche d’entreprises** (script dans le dépôt) au **scraping Pappers** non autorisé.
+- **Listes 80.10Z / 88.91A** : préférer l’**API Recherche d’entreprises** (script dans le dépôt) au **scraping Pappers** non autorisé.
 
 ### Marges (rappel ordre de grandeur)
 

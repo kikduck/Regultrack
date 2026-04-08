@@ -1,0 +1,113 @@
+{
+  "$schema_comment": "Registre des verticales prospection NAF — utilisé par fetch_sector_prospects.py, export_analysis_figures.py, docs/prospects/",
+  "defaults": {
+    "tranches_effectif": ["11", "12", "22", "31", "32", "41", "42", "51", "52", "53"]
+  },
+  "sectors": {
+    "securite-privee": {
+      "label": "Sécurité privée",
+      "naf_codes": ["80.10Z"],
+      "naf_libelle": "Activités de sécurité privée",
+      "csv_filename": "prospects_securite_8010z.csv",
+      "assets_subdir": "prospects-analysis",
+      "analyse_doc": "analyse-securite-privee.md",
+      "strategie": {
+        "priorite_consultant": 3,
+        "multi_sites": "Structurel pour réseaux d’agents et bases ; moins « natif » que crèches/EHPAD.",
+        "obligations": "CNAPS, formations, habilitations — très codifiées.",
+        "douleur": "Carte / habilitation expirée = blocage opérationnel immédiat.",
+        "risques": "Cycle d’achat variable ; concurrence horizontal bas coût."
+      }
+    },
+    "creches": {
+      "label": "Accueil jeune enfant (crèches)",
+      "naf_codes": ["88.91A"],
+      "naf_libelle": "Accueil de jeunes enfants",
+      "csv_filename": "prospects_creches_8891a.csv",
+      "assets_subdir": "prospects-analysis-creches",
+      "analyse_doc": "analyse-creches.md",
+      "strategie": {
+        "priorite_consultant": 1,
+        "multi_sites": "Très fort — réseaux d’établissements.",
+        "obligations": "PMI, formations, agréments — très codifiées.",
+        "douleur": "Suspension agrément / contrôle PMI — très lourd.",
+        "risques": "Tarif perçu ; besoin d’onboarding irréprochable."
+      }
+    },
+    "ehpad": {
+      "label": "EHPAD et hébergement médicalisé / social personnes âgées",
+      "naf_codes": ["87.10A", "87.30A"],
+      "naf_libelle": "Hébergement médicalisé (87.10A) ; hébergement social personnes âgées (87.30A)",
+      "csv_filename": "prospects_ehpad.csv",
+      "assets_subdir": "prospects-analysis-ehpad",
+      "analyse_doc": "analyse-ehpad.md",
+      "strategie": {
+        "priorite_consultant": 2,
+        "multi_sites": "Très fort — groupes régionaux et nationaux.",
+        "obligations": "ARS, formations soignants, équipements, exercices — massives et documentées.",
+        "douleur": "Retrait d’autorisation / contrôles ARS — gravité maximale.",
+        "risques": "Secteur sous pression médiatique — sensibilisation ou lassitude vis-à-vis des outils."
+      }
+    },
+    "restauration-collective": {
+      "label": "Autres services de restauration (collective / traiteurs structurés)",
+      "naf_codes": ["56.29A"],
+      "naf_libelle": "Autres services de restauration n.c.a.",
+      "csv_filename": "prospects_restauration_collective.csv",
+      "assets_subdir": "prospects-analysis-restauration-collective",
+      "analyse_doc": "analyse-restauration-collective.md",
+      "strategie": {
+        "priorite_consultant": 4,
+        "multi_sites": "Fort pour traiteurs multi-sites / cantines ; équipes parfois tournantes (complexité produit).",
+        "obligations": "HACCP, hygiène, traçabilité — cadre précis (DDPP).",
+        "douleur": "Fermeture administrative hygiène — immédiate et visible.",
+        "risques": "Secteur très « cost-driven » ; argument ROI incident à marteler."
+      }
+    },
+    "ambulances": {
+      "label": "Ambulances et transport sanitaire",
+      "naf_codes": ["86.90A"],
+      "naf_libelle": "Ambulance",
+      "csv_filename": "prospects_ambulances.csv",
+      "assets_subdir": "prospects-analysis-ambulances",
+      "analyse_doc": "analyse-ambulances.md",
+      "strategie": {
+        "priorite_consultant": 3,
+        "multi_sites": "Modéré — plusieurs bases / garages régionaux.",
+        "obligations": "DEA, AFGSU, véhicules, ARS — très réglementé, peu outillé.",
+        "douleur": "Binaire — sans dossier à jour, pas d’activité.",
+        "risques": "TAM plus étroit que crèches/EHPAD."
+      }
+    },
+    "organisme-formation": {
+      "label": "Autres enseignements (organismes de formation)",
+      "naf_codes": ["85.59A", "85.59B"],
+      "naf_libelle": "Formation continue (85.59A) ; autres enseignements (85.59B)",
+      "csv_filename": "prospects_organisme_formation.csv",
+      "assets_subdir": "prospects-analysis-organisme-formation",
+      "analyse_doc": "analyse-organisme-formation.md",
+      "strategie": {
+        "priorite_consultant": 6,
+        "multi_sites": "Modéré — réseaux de centres.",
+        "obligations": "Qualiopi, preuves, audits — cadre exigeant mais moins « binaire » que CNAPS/PMI.",
+        "douleur": "Perte financement public / certification — réelle, souvent moins urgente au quotidien.",
+        "risques": "Concurrence outils formation / LMS ; message produit à affiner."
+      }
+    },
+    "pharmacies-reseau": {
+      "label": "Commerce de détail de produits pharmaceutiques",
+      "naf_codes": ["47.73Z"],
+      "naf_libelle": "Commerce de détail de produits pharmaceutiques en magasin spécialisé",
+      "csv_filename": "prospects_pharmacies.csv",
+      "assets_subdir": "prospects-analysis-pharmacies",
+      "analyse_doc": "analyse-pharmacies.md",
+      "strategie": {
+        "priorite_consultant": 5,
+        "multi_sites": "Modéré — réseaux d’officines (souvent 4–20).",
+        "obligations": "Ordre, ARS, DPC, équipements — lourdes, recherche initiale forte pour le registre.",
+        "douleur": "Sanctions / contrôles — significatifs ; ticket SaaS potentiellement plus élevé.",
+        "risques": "Complexité métier pharmacie ; temps de construction du registre."
+      }
+    }
+  }
+}

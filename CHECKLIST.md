@@ -7,7 +7,8 @@
 
 ## Validation marché & retour consultant (avril 2026)
 
-> Synthèse d’un échange avec un consultant externe, complétée (veille IA vs risque juridique, marges bootstrap, prospection). **Alignement avec la réalité du dépôt :** une partie du produit est déjà codée — la priorité commerciale reste toutefois la **découverte terrain** sur le vocabulaire et les workflows réels.
+> Synthèse d’un échange avec un consultant externe, complétée (veille IA vs risque juridique, marges bootstrap, prospection). **Alignement avec la réalité du dépôt :** une partie du produit est déjà codée — la priorité commerciale reste toutefois la **découverte terrain** sur le vocabulaire et les workflows réels.  
+> **Récit structuré de l’échange** (produit, prospection pas à pas, lecture des exports 80.10Z / 88.91A, tension « sécu d’abord » vs « crèches selon les chiffres ») : [`docs/recap-conversation-consultant-prospection-donnees.md`](docs/recap-conversation-consultant-prospection-donnees.md).
 
 ### Verdict global
 
@@ -16,7 +17,9 @@
 | **Viable ?** | Oui — problème réel, marché sous-outillé, exécution produit sérieuse. |
 | **Proposition juste ?** | Largement oui — positionnement obligation vs GED, tarifs cohérents, analyse EnRègle honnête. |
 | **Marché « intéressant » ?** | Oui pour un **bootstrap rentable** (ordre de grandeur **500 k€–1 M€ ARR**), pas comme pitch de levée sans élargir le scope ou les pays. |
-| **Priorité immédiate** | **~10 entretiens découverte** avec de vrais prospects (**sécurité privée** en premier choix conseillé) — comprendre si le problème modélisé correspond au vécu, avant d’empiler back-office / IA. |
+| **Priorité immédiate** | **~10 entretiens découverte** avec de vrais prospects — comprendre si le problème modélisé correspond au vécu, avant d’empiler back-office / IA. |
+
+**Ordre des verticales (à trancher au terrain) :** en **qualitatif**, le même interlocuteur conseillait d’abord la **sécurité privée** (CNAPS, vocabulaire serré). Après **analyse des listes API** (multi-établissements, volumes), il conclut à **privilégier les crèches** côté **profondeur de fichier qualifié** — voir le récap détaillé ci-dessus, § 8–10.
 
 ### Points forts (à capitaliser)
 
@@ -62,15 +65,22 @@
 
 **Piste retenue dans ce dépôt**
 
-1. Script **`scripts/prospecting/fetch_securite_privee_sirene.py`** — interroge l’**[API Recherche d’entreprises](https://api.gouv.fr/les-api/api-recherche-entreprises)** (`recherche-entreprises.api.gouv.fr`) : accès ouvert, **User-Agent explicite**, **≤ 7 req/s** (le script espace les appels). Filtres : `activite_principale=80.10Z`, `tranche_effectif_salarie` pour se rapprocher du filtre effectifs Pappers (codes INSEE ; défaut = tranches à partir de **10–19 salariés**).
-2. **Plafonds de résultats** : si le total renvoyé semble capé, **segmenter** (ex. par `departement=`) en réutilisant les mêmes filtres — documenté dans le script / commentaires.
-3. **Champs type Pappers** (scores propriétaires, etc.) : export ou offre **commerciale** Pappers, ou **enrichissement manuel** pour les 50–100 premiers comptes — souvent acceptable en bootstrap.
+1. **Registre** : `scripts/prospecting/sectors.json` — NAF par verticale, noms de fichiers CSV, dossiers PNG.
+2. **Export** : **`scripts/prospecting/fetch_sector_prospects.py`** (`--list`, `--sector <id>`, `--all`) — API **[Recherche d’entreprises](https://api.gouv.fr/les-api/api-recherche-entreprises)** ; tranches effectif **10+** salariés par défaut ; **User-Agent** explicite ; **≤ 7 req/s**. Rétrocompat : `fetch_securite_privee_sirene.py` pour un NAF unique.
+3. **Plafonds / segmentations** : si besoin d’exhaustivité, segmenter (ex. `departement=`) — voir `docs/prospects/METHODOLOGIE-API.md`.
+4. **Champs type Pappers** : export commercial autorisé ou enrichissement manuel pour les premiers comptes.
 
-Exemple :
+Exemples :
 
 ```bash
-python scripts/prospecting/fetch_securite_privee_sirene.py --out data/prospects_securite_8010z.csv
+python scripts/prospecting/fetch_sector_prospects.py --list
+python scripts/prospecting/fetch_sector_prospects.py --sector securite-privee
+python scripts/prospecting/fetch_sector_prospects.py --sector ehpad
+python scripts/prospecting/export_analysis_figures.py --all-sectors
+python scripts/prospecting/sector_stats.py
 ```
+
+**Documentation** : hub `docs/prospects/` (README, méthodologie, **synthèse comparative secteurs**, une analyse par verticale). Les anciens chemins `docs/analyse-prospects-*.md` redirigent vers ce dossier.
 
 Les fichiers `data/prospects_*` sont ignorés par git (voir `.gitignore`).
 
@@ -704,6 +714,7 @@ Alerte interne back-office → validation humaine obligatoire
 | 06/04/2026 | 📝 Phase 2.3 — ajout spec intégrité « LuVu light » (SHA-256 + horodatage serveur, hors blockchain/TSA MVP) |
 | 06/04/2026 | ✅ Phase 2.3 impl. — historique preuves UI, SHA-256 upload, migration `005`, tests `proof-display.test.ts` |
 | 08/04/2026 | 📝 Section *Validation marché & retour consultant* + prospection API publique (`scripts/prospecting/`) ; alignement `conformite-multi-sites.md` (risques, prospection, synthèse externe) |
+| 08/04/2026 | 📝 Hub `docs/prospects/` — registre `sectors.json`, `fetch_sector_prospects.py`, `sirene_api.py`, 5 nouveaux secteurs (EHPAD, restauration 56.29A, ambulances, OF, pharmacies), `SYNTHESE-COMPARATIVE-SECTEURS.md`, notebook `analyse_prospects_sectoriel.ipynb`, `stats-secteurs.json` |
 
 ---
 

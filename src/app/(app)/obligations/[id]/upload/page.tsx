@@ -1,25 +1,113 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Upload, FileText, X } from "lucide-react";
 import { statusFromDueDateAndAlerts } from "@/lib/obligation-status";
 import { sha256HexFromFile } from "@/lib/hash-file";
+import { ProofHistoryList } from "@/components/proof-history-list";
+import {
+  pickActiveProofId,
+  sortProofsNewestFirst,
+  type ProofForDisplay,
+} from "@/lib/proof-display";
 
 export default function UploadProofPage() {
   const { id: obligationId } = useParams<{ id: string }>();
+  const [obligationTitle, setObligationTitle] = useState<string | null>(null);
+  const [obligationDueDate, setObligationDueDate] = useState<string | null>(null);
+  const [proofs, setProofs] = useState<ProofForDisplay[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [validFrom, setValidFrom] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
+
+  const loadObligationAndProofs = useCallback(
+    async (opts?: { background?: boolean }) => {
+      if (!obligationId) return;
+      const background = opts?.background === true;
+      if (!background) {
+        setPageLoading(true);
+        setPageError(null);
+      }
+      const supabase = createClient();
+      const { data, error: fetchError } = await supabase
+        .from("obligations")
+        .select(
+          "due_date, obligation_templates(name), custom_obligation_templates(name), proofs(*, profiles(full_name))"
+        )
+        .eq("id", obligationId)
+        .single();
+
+      if (fetchError || !data) {
+        if (!background) {
+          setPageError(
+            fetchError?.message ?? "Impossible de charger cette obligation."
+          );
+          setPageLoading(false);
+        }
+        return;
+      }
+
+      const standard = data.obligation_templates as
+        | { name: string }
+        | { name: string }[]
+        | null;
+      const custom = data.custom_obligation_templates as
+        | { name: string }
+        | { name: string }[]
+        | null;
+      const standardName = Array.isArray(standard)
+        ? standard[0]?.name
+        : standard?.name;
+      const customName = Array.isArray(custom) ? custom[0]?.name : custom?.name;
+      setObligationTitle(standardName ?? customName ?? "Obligation");
+      setObligationDueDate(data.due_date);
+
+      const raw = (data.proofs ?? []) as Array<{
+        id: string;
+        file_name: string;
+        file_url: string;
+        uploaded_at: string;
+        valid_from: string | null;
+        valid_until: string | null;
+        file_hash: string | null;
+        profiles?: { full_name: string } | null;
+      }>;
+      setProofs(
+        raw.map((p) => ({
+          id: p.id,
+          file_name: p.file_name,
+          file_url: p.file_url,
+          uploaded_at: p.uploaded_at,
+          valid_from: p.valid_from,
+          valid_until: p.valid_until,
+          file_hash: p.file_hash,
+          profiles: p.profiles,
+        }))
+      );
+      if (!background) setPageLoading(false);
+    },
+    [obligationId]
+  );
+
+  useEffect(() => {
+    void loadObligationAndProofs();
+  }, [loadObligationAndProofs]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const dropped = e.dataTransfer.files[0];
-    if (dropped) setFile(dropped);
+    if (dropped) {
+      setSuccess(null);
+      setFile(dropped);
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,6 +118,7 @@ export default function UploadProofPage() {
     }
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     let fileHash: string;
     try {
@@ -44,7 +133,10 @@ export default function UploadProofPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const ext = file.name.split(".").pop();
     const filePath = `${user.id}/${obligationId}/${Date.now()}.${ext}`;
@@ -107,12 +199,23 @@ export default function UploadProofPage() {
       .update(updateData)
       .eq("id", obligationId);
 
-    router.back();
+    setObligationDueDate(updateData.due_date ?? obligationDueDate);
+    setFile(null);
+    setValidFrom("");
+    setValidUntil("");
+    setSuccess("Preuve enregistrée. Elle apparaît ci-dessus avec la date de dépôt.");
+    await loadObligationAndProofs({ background: true });
+    router.refresh();
+    setLoading(false);
   }
 
+  const sortedProofs = sortProofsNewestFirst(proofs);
+  const activeProofId = pickActiveProofId(proofs, obligationDueDate);
+
   return (
-    <div className="p-6 lg:p-8 max-w-xl">
+    <div className="p-6 lg:p-8 max-w-2xl">
       <button
+        type="button"
         onClick={() => router.back()}
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
@@ -120,18 +223,62 @@ export default function UploadProofPage() {
         Retour
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Ajouter une preuve
+      <h1 className="text-2xl font-bold text-gray-900">
+        Gérer les preuves
       </h1>
-      <p className="text-sm text-gray-500 mb-6 -mt-2">
-        Une empreinte <strong>SHA-256</strong> du fichier est calculée dans votre
-        navigateur et enregistrée avec le dépôt (intégrité, traçabilité).
+      {obligationTitle && (
+        <p className="mt-1 text-sm font-medium text-gray-600">{obligationTitle}</p>
+      )}
+      <p className="text-sm text-gray-500 mt-4 mb-6">
+        Les documents déjà déposés sont listés avec la{" "}
+        <strong>date et l&apos;heure d&apos;upload</strong>, l&apos;auteur et les dates
+        de validité. Pour un nouveau fichier, une empreinte{" "}
+        <strong>SHA-256</strong> est calculée dans le navigateur (intégrité,
+        traçabilité).
       </p>
 
+      {pageError && (
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 border border-red-200 mb-6">
+          {pageError}
+        </div>
+      )}
+
+      {!pageError && (
+        <section className="mb-8" aria-labelledby="proofs-existing-heading">
+          <h2
+            id="proofs-existing-heading"
+            className="text-base font-semibold text-gray-900 mb-3"
+          >
+            Preuves enregistrées
+          </h2>
+          {pageLoading ? (
+            <p className="text-sm text-gray-500">Chargement…</p>
+          ) : (
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <ProofHistoryList
+                proofs={sortedProofs}
+                activeProofId={activeProofId}
+                variant="standalone"
+              />
+            </div>
+          )}
+        </section>
+      )}
+
+      {!pageError && (
       <form onSubmit={handleSubmit} className="space-y-5">
+        <h2 className="text-base font-semibold text-gray-900">
+          Ajouter une nouvelle preuve
+        </h2>
         {error && (
           <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 border border-red-200">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 border border-emerald-200">
+            {success}
           </div>
         )}
 
@@ -152,7 +299,10 @@ export default function UploadProofPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setFile(null)}
+                onClick={() => {
+                  setSuccess(null);
+                  setFile(null);
+                }}
                 className="ml-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
@@ -169,7 +319,10 @@ export default function UploadProofPage() {
                     type="file"
                     className="hidden"
                     accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      setSuccess(null);
+                      setFile(e.target.files?.[0] || null);
+                    }}
                   />
                 </label>
               </p>
@@ -212,6 +365,7 @@ export default function UploadProofPage() {
           {loading ? "Upload en cours..." : "Enregistrer la preuve"}
         </button>
       </form>
+      )}
     </div>
   );
 }

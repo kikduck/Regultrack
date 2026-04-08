@@ -1,0 +1,255 @@
+{
+  "securite-privee": {
+    "lignes": 1691,
+    "siren_uniques": 1691,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 99.4,
+    "pme": 1518,
+    "eti": 146,
+    "ge": 27,
+    "shortlist_pme_t11_12_neo2": 150,
+    "neo_median": 1.0,
+    "neo_mean": 1.4872856298048491,
+    "neo_max": 75.0,
+    "tranches": {
+      "11": 690,
+      "12": 726,
+      "22": 147,
+      "31": 35,
+      "32": 44,
+      "41": 24,
+      "42": 10,
+      "51": 12,
+      "52": 2,
+      "53": 1
+    },
+    "top5_departements": {
+      "93": 166,
+      "75": 159,
+      "13": 92,
+      "94": 76,
+      "95": 74
+    },
+    "segments_clients": {
+      "seuil_minimal": 16,
+      "coeur_cible": 5,
+      "plafond_bootstrap": 0,
+      "regles_proxy": "Seuil minimal : PME, 3–5 étab. ouverts, TEF 11|12. Cœur : PME|ETI, 6–15 étab., TEF 12|22|31. Plafond : PME|ETI, 15–30 étab., TEF 22|31|32|41."
+    }
+  },
+  "creches": {
+    "lignes": 2409,
+    "siren_uniques": 2409,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 50.4,
+    "pme": 2128,
+    "eti": 240,
+    "ge": 41,
+    "shortlist_pme_t11_12_neo2": 869,
+    "neo_median": 1.0,
+    "neo_mean": 3.162723121627231,
+    "neo_max": 496.0,
+    "tranches": {
+      "11": 1561,
+      "12": 743,
+      "22": 61,
+      "31": 16,
+      "32": 15,
+      "41": 7,
+      "42": 2,
+      "51": 3,
+      "53": 1
+    },
+    "top5_departements": {
+      "92": 191,
+      "69": 120,
+      "974": 101,
+      "75": 94,
+      "59": 93
+    },
+    "segments_clients": {
+      "seuil_minimal": 346,
+      "coeur_cible": 87,
+      "plafond_bootstrap": 21,
+      "regles_proxy": "Seuil minimal : PME, 3–5 étab. ouverts, TEF 11|12. Cœur : PME|ETI, 6–15 étab., TEF 12|22|31. Plafond : PME|ETI, 15–30 étab., TEF 22|31|32|41."
+    }
+  },
+  "ehpad": {
+    "lignes": 1402,
+    "siren_uniques": 1402,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 38.1,
+    "pme": 1000,
+    "eti": 222,
+    "ge": 178,
+    "shortlist_pme_t11_12_neo2": 143,
+    "neo_median": 1.0,
+    "neo_mean": 3.064194008559201,
+    "neo_max": 237.0,
+    "tranches": {
+      "11": 206,
+      "12": 686,
+      "22": 371,
+      "31": 39,
+      "32": 54,
+      "41": 21,
+      "42": 15,
+      "51": 6,
+      "52": 3,
+      "53": 1
+    },
+    "top5_departements": {
+      "06": 59,
+      "13": 46,
+      "59": 42,
+      "33": 42,
+      "34": 42
+    },
+    "segments_clients": {
+      "seuil_minimal": 395,
+      "coeur_cible": 73,
+      "plafond_bootstrap": 21,
+      "regles_proxy": "Seuil minimal : PME|ETI, 2–4 étab., TEF 11|12|22. Cœur : PME|ETI, 5–12 étab., TEF 12|22|31|32. Plafond : PME|ETI, 13–25 étab., TEF 22–42 (hors GE)."
+    }
+  },
+  "restauration-collective": {
+    "lignes": 143,
+    "siren_uniques": 143,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 89.5,
+    "pme": 88,
+    "eti": 31,
+    "ge": 24,
+    "shortlist_pme_t11_12_neo2": 30,
+    "neo_median": 2.0,
+    "neo_mean": 56.45454545454545,
+    "neo_max": 1726.0,
+    "tranches": {
+      "11": 46,
+      "12": 56,
+      "22": 20,
+      "31": 5,
+      "32": 4,
+      "41": 2,
+      "42": 3,
+      "51": 3,
+      "52": 3,
+      "53": 1
+    },
+    "top5_departements": {
+      "75": 7,
+      "31": 7,
+      "78": 6,
+      "57": 5,
+      "972": 5
+    },
+    "segments_clients": {
+      "seuil_minimal": 16,
+      "coeur_cible": 5,
+      "plafond_bootstrap": 7,
+      "regles_proxy": "Proxy sites = étab. ouverts (NAF 56.29A = échantillon réduit). Seuil : PME|ETI, 3–5 étab., TEF 11|12|22. Cœur : 6–20 étab., TEF 12|22|31. Plafond : 15–50 étab., TEF 22|31|32|41."
+    }
+  },
+  "ambulances": {
+    "lignes": 2196,
+    "siren_uniques": 2196,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 99.8,
+    "pme": 2087,
+    "eti": 92,
+    "ge": 17,
+    "shortlist_pme_t11_12_neo2": 732,
+    "neo_median": 1.0,
+    "neo_mean": 1.6297814207650274,
+    "neo_max": 52.0,
+    "tranches": {
+      "11": 1333,
+      "12": 835,
+      "22": 19,
+      "31": 3,
+      "32": 5,
+      "42": 1
+    },
+    "top5_departements": {
+      "59": 83,
+      "62": 73,
+      "76": 57,
+      "34": 53,
+      "80": 49
+    },
+    "segments_clients": {
+      "seuil_minimal": 630,
+      "coeur_cible": 115,
+      "plafond_bootstrap": 8,
+      "regles_proxy": "Proxy agences = étab. ouverts. Seuil : PME, 2–3 agences, TEF 11|12. Cœur : PME|ETI, 4–15 agences, TEF 11|12|22. Plafond : PME|ETI, 8–25 agences, TEF 12|22|31. (Nombre de véhicules non disponible dans l’export.)"
+    }
+  },
+  "organisme-formation": {
+    "lignes": 2655,
+    "siren_uniques": 2655,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 56.2,
+    "pme": 2365,
+    "eti": 238,
+    "ge": 52,
+    "shortlist_pme_t11_12_neo2": 754,
+    "neo_median": 1.0,
+    "neo_mean": 2.7566854990583805,
+    "neo_max": 230.0,
+    "tranches": {
+      "11": 1425,
+      "12": 976,
+      "22": 152,
+      "31": 30,
+      "32": 45,
+      "41": 13,
+      "42": 10,
+      "51": 3,
+      "52": 1
+    },
+    "top5_departements": {
+      "75": 398,
+      "92": 137,
+      "13": 126,
+      "69": 118,
+      "34": 93
+    },
+    "segments_clients": {
+      "seuil_minimal": 566,
+      "coeur_cible": 256,
+      "plafond_bootstrap": 46,
+      "regles_proxy": "Seuil : PME, 2–3 lieux, TEF 11|12. Cœur : PME|ETI, 4–10 lieux, TEF 11|12|22. Plafond : PME|ETI, 11–20 lieux, TEF 12|22|31|32."
+    }
+  },
+  "pharmacies-reseau": {
+    "lignes": 3849,
+    "siren_uniques": 3849,
+    "doublons_siren": 0,
+    "pct_dirigeants_renseignes": 99.8,
+    "pme": 3847,
+    "eti": 2,
+    "ge": 0,
+    "shortlist_pme_t11_12_neo2": 93,
+    "neo_median": 1.0,
+    "neo_mean": 1.0033775006495194,
+    "neo_max": 7.0,
+    "tranches": {
+      "11": 3318,
+      "12": 528,
+      "22": 3
+    },
+    "top5_departements": {
+      "75": 170,
+      "13": 143,
+      "59": 111,
+      "33": 107,
+      "69": 99
+    },
+    "segments_clients": {
+      "seuil_minimal": 90,
+      "coeur_cible": 6,
+      "plafond_bootstrap": 9,
+      "regles_proxy": "Seuil : PME, 2–3 étab. ouverts, TEF 11|12. Cœur : PME, exactement 3 étab., TEF 11|12|22 (plafond légal titulaire). Plafond : PME, 3–7 étab., TEF 11|12|22 (périmètre élargi holdings, biais NAF)."
+    }
+  }
+}

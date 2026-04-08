@@ -16,10 +16,16 @@ function shortHash(hex: string | null): string | null {
 export function ProofHistoryList({
   proofs,
   activeProofId,
+  variant = "inline",
 }: {
   proofs: ProofForDisplay[];
   activeProofId: string | null;
+  /** inline = cartes dashboard ; standalone = page « Gérer les preuves » */
+  variant?: "inline" | "standalone";
 }) {
+  const body = variant === "standalone" ? "text-sm" : "text-[11px]";
+  const badge = variant === "standalone" ? "text-xs" : "text-[10px]";
+  const hashRow = variant === "standalone" ? "text-xs" : "text-[10px]";
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const today = todayLocalIso();
 
@@ -35,7 +41,9 @@ export function ProofHistoryList({
 
   if (proofs.length === 0) {
     return (
-      <p className="text-[11px] text-gray-400 italic">Aucun document rattaché</p>
+      <p className={`${body} text-gray-400 italic`}>
+        Aucun document rattaché
+      </p>
     );
   }
 
@@ -50,7 +58,7 @@ export function ProofHistoryList({
         return (
           <li
             key={proof.id}
-            className={`rounded-lg border px-3 py-2.5 text-[11px] ${
+            className={`rounded-lg border px-3 py-2.5 ${body} ${
               isActive
                 ? "border-emerald-200 bg-emerald-50/80"
                 : "border-gray-100 bg-gray-50/50"
@@ -69,16 +77,22 @@ export function ProofHistoryList({
                     <span className="truncate">{proof.file_name}</span>
                   </a>
                   {isActive ? (
-                    <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                    <span
+                      className={`rounded-full bg-emerald-600/10 px-2 py-0.5 ${badge} font-bold text-emerald-800`}
+                    >
                       Preuve actuelle
                     </span>
                   ) : (
-                    <span className="rounded-full bg-gray-200/80 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                    <span
+                      className={`rounded-full bg-gray-200/80 px-2 py-0.5 ${badge} font-medium text-gray-600`}
+                    >
                       Historique
                     </span>
                   )}
                   {expired && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800">
+                    <span
+                      className={`rounded-full bg-red-100 px-2 py-0.5 ${badge} font-bold text-red-800`}
+                    >
                       Périmée
                     </span>
                   )}
@@ -102,7 +116,9 @@ export function ProofHistoryList({
                     : "—"}
                 </p>
                 {proof.file_hash ? (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 font-mono text-[10px] text-gray-600">
+                  <div
+                    className={`mt-1.5 flex flex-wrap items-center gap-2 font-mono ${hashRow} text-gray-600`}
+                  >
                     <span title={proof.file_hash}>
                       SHA-256 {shortHash(proof.file_hash)}
                     </span>
@@ -120,7 +136,7 @@ export function ProofHistoryList({
                     </button>
                   </div>
                 ) : (
-                  <p className="mt-1 text-[10px] text-amber-700">
+                  <p className={`mt-1 ${hashRow} text-amber-700`}>
                     Pas d’empreinte (fichier déposé avant l’ajout SHA-256).
                   </p>
                 )}
