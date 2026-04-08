@@ -15,6 +15,8 @@ interface JobTitleSelectProps {
   jobTitleId: string | null;
   onChange: (name: string, id: string | null) => void;
   orgId: string;
+  /** Libellé quand aucun poste n’est sélectionné (ex. adapté au secteur). */
+  emptyLabel?: string;
 }
 
 export function JobTitleSelect({
@@ -22,6 +24,7 @@ export function JobTitleSelect({
   jobTitleId,
   onChange,
   orgId,
+  emptyLabel = "Sélectionner un poste…",
 }: JobTitleSelectProps) {
   const [open, setOpen] = useState(false);
   const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
@@ -81,10 +84,10 @@ export function JobTitleSelect({
           onClick={() => setOpen(!open)}
           className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <span className="truncate">
+          <span className="truncate text-left">
             {jobTitleId
               ? jobTitles.find((jt) => jt.id === jobTitleId)?.name || value
-              : value || "Sélectionner un poste..."}
+              : value || emptyLabel}
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>

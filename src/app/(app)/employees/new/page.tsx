@@ -8,15 +8,17 @@ import { ArrowLeft } from "lucide-react";
 import type { Site } from "@/lib/types/database";
 import { JobTitleSelect } from "@/components/job-title-select";
 import { resolveOrgSector } from "@/lib/profile-org";
+import { jobTitleEmptyLabelFr } from "@/lib/sectors";
 
 export default function NewEmployeePage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [jobTitle, setJobTitle] = useState("Agent de sécurité");
+  const [jobTitle, setJobTitle] = useState("");
   const [jobTitleId, setJobTitleId] = useState<string | null>(null);
   const [siteId, setSiteId] = useState("");
   const [sites, setSites] = useState<Site[]>([]);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [orgSector, setOrgSector] = useState<string>("securite_privee");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -32,12 +34,13 @@ export default function NewEmployeePage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("org_id")
+        .select("org_id, organizations(sector)")
         .eq("id", user.id)
         .single();
 
       if (!profile?.org_id) return;
       setOrgId(profile.org_id);
+      setOrgSector(resolveOrgSector(profile.organizations));
 
       const { data } = await supabase
         .from("sites")
@@ -66,6 +69,10 @@ export default function NewEmployeePage() {
     }
     if (!orgId) {
       setError("Organisation non trouvée.");
+      return;
+    }
+    if (!jobTitle.trim()) {
+      setError("Veuillez sélectionner ou créer un poste.");
       return;
     }
     setLoading(true);
@@ -212,6 +219,7 @@ export default function NewEmployeePage() {
                 setJobTitleId(id);
               }}
               orgId={orgId}
+              emptyLabel={jobTitleEmptyLabelFr(orgSector)}
             />
           )}
         </div>

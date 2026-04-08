@@ -14,6 +14,19 @@ export function sectorLabelFr(code: string): string {
   return SECTOR_LABELS_FR[code] ?? code;
 }
 
+/** Texte du sélecteur de poste quand rien n’est choisi (exemples métier par secteur). */
+const JOB_TITLE_EMPTY_LABEL_FR: Record<string, string> = {
+  securite_privee: "Choisir un poste — ex. agent de sécurité",
+  creches: "Choisir un poste — ex. éducateur de jeunes enfants",
+  ehpad: "Choisir un poste — ex. aide-soignant(e)",
+  ambulances: "Choisir un poste — ex. ambulancier",
+  pharmacies: "Choisir un poste — ex. préparateur en pharmacie",
+};
+
+export function jobTitleEmptyLabelFr(sector: string): string {
+  return JOB_TITLE_EMPTY_LABEL_FR[sector] ?? "Choisir un poste…";
+}
+
 /** Options d’onboarding : uniquement les codes autorisés par la plateforme, ordre stable. */
 export function onboardingSectorOptions(allowedCodes: string[]): { code: string; label: string }[] {
   const unique = [...new Set(allowedCodes.filter(Boolean))];
