@@ -29,10 +29,14 @@ import os
 import re
 import sys
 import time
+import warnings
 from datetime import datetime
 from pathlib import Path
 
 import requests
+
+# Paquet renommé ddgs ; évite le bruit à l'exécution
+warnings.filterwarnings("ignore", message=".*duckduckgo_search.*renamed.*", category=RuntimeWarning)
 
 # ──────────────────────────────────────────────
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
@@ -46,7 +50,81 @@ CONTEXT_CHAR_BUDGET = 28_000
 
 MAX_RESULTS_LEGACY = 6
 MAX_CHARS_LEGACY = 1200
+
+# Brave LLM Context : contraintes documentées sur `q` (≈ 400 caractères, 50 mots max).
+BRAVE_Q_MAX_CHARS = 380
+BRAVE_Q_MAX_WORDS = 48
+# Débit : ~2 req/s sur le plan gratuit — espacer les appels et retenter les 429.
+BRAVE_MIN_INTERVAL_S = 0.55
+BRAVE_BETWEEN_FICHES_S = float(os.environ.get("BRAVE_BETWEEN_FICHES_S", "6"))
 # ──────────────────────────────────────────────
+
+_last_brave_call_monotonic: float = 0.0
+
+
+def _throttle_brave() -> None:
+    global _last_brave_call_monotonic
+    now = time.monotonic()
+    wait = BRAVE_MIN_INTERVAL_S - (now - _last_brave_call_monotonic)
+    if wait > 0:
+        time.sleep(wait)
+    _last_brave_call_monotonic = time.monotonic()
+
+
+def clamp_brave_query(q: str) -> str:
+    """Respecte les limites Brave sur `q` (évite les 400 Bad Request)."""
+    q = " ".join((q or "").split()).strip()
+    if not q:
+        return q
+    words = q.split()
+    if len(words) > BRAVE_Q_MAX_WORDS:
+        q = " ".join(words[:BRAVE_Q_MAX_WORDS])
+    if len(q) > BRAVE_Q_MAX_CHARS:
+        q = q[:BRAVE_Q_MAX_CHARS].rsplit(" ", 1)[0]
+    return q
+
+
+def _brave_headers(api_key: str) -> dict[str, str]:
+    return {
+        "X-Subscription-Token": api_key,
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+    }
+
+
+def _brave_request(
+    method: str,
+    url: str,
+    *,
+    api_key: str,
+    params: dict | None = None,
+    json_body: dict | None = None,
+    timeout: int = 45,
+) -> requests.Response | None:
+    """Requête Brave avec throttle + retries sur 429."""
+    headers = {**_brave_headers(api_key), "User-Agent": "Regultrack-research/1.0"}
+    if json_body is not None:
+        headers["Content-Type"] = "application/json"
+    delays = (1.0, 3.0, 8.0)
+    for attempt, delay in enumerate((*delays, 0)):
+        _throttle_brave()
+        try:
+            if method.upper() == "POST" and json_body is not None:
+                r = requests.post(url, headers=headers, json=json_body, timeout=timeout)
+            else:
+                r = requests.get(url, headers=headers, params=params, timeout=timeout)
+        except requests.RequestException as e:
+            if attempt < len(delays):
+                print(f"  [Brave] Erreur réseau, nouvel essai dans {delay}s… ({e})")
+                time.sleep(delay)
+                continue
+            raise
+        if r.status_code == 429 and attempt < len(delays):
+            print(f"  [Brave] 429 Too Many Requests — attente {delay}s puis retry…")
+            time.sleep(delay)
+            continue
+        return r
+    return None
 
 ROOT = Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parent
@@ -82,37 +160,61 @@ def get_brave_api_key() -> str | None:
     return key or None
 
 
-def _brave_headers(api_key: str) -> dict[str, str]:
-    return {
-        "X-Subscription-Token": api_key,
-        "Accept": "application/json",
-        "Accept-Encoding": "gzip",
-    }
-
-
 def fetch_brave_llm_context(query: str, api_key: str, timeout: int = 45) -> str:
     """
     Brave LLM Context : extraits pertinents par URL (pas de scrape local).
     Voir https://api-dashboard.search.brave.com/documentation/services/llm-context
     """
-    params = {
-        "q": query,
+    q = clamp_brave_query(query)
+    if not q:
+        return ""
+
+    # POST JSON : évite les URLs trop longues ; paramètres conservateurs (certains plans plafonnent les tokens).
+    body = {
+        "q": q,
         "country": "FR",
         "search_lang": "fr",
-        "count": 20,
-        "maximum_number_of_urls": 15,
-        "maximum_number_of_tokens": 12000,
-        "maximum_number_of_snippets_per_url": 30,
+        "count": 10,
+        "maximum_number_of_urls": 10,
+        "maximum_number_of_tokens": 8192,
         "context_threshold_mode": "balanced",
     }
     try:
-        r = requests.get(
+        r = _brave_request(
+            "POST",
             BRAVE_LLM_CONTEXT_URL,
-            params=params,
-            headers=_brave_headers(api_key),
+            api_key=api_key,
+            json_body=body,
             timeout=timeout,
         )
-        r.raise_for_status()
+        if r is None:
+            return ""
+        if r.status_code >= 400:
+            hint = (r.text or "")[:400].replace("\n", " ")
+            print(f"  [Brave LLM Context] HTTP {r.status_code} — {hint or r.reason}")
+            # Repli GET minimal (certains comptes n'acceptent que GET)
+            if r.status_code == 400:
+                _throttle_brave()
+                r2 = _brave_request(
+                    "GET",
+                    BRAVE_LLM_CONTEXT_URL,
+                    api_key=api_key,
+                    params={
+                        "q": q,
+                        "country": "FR",
+                        "search_lang": "fr",
+                        "count": 10,
+                    },
+                    timeout=timeout,
+                )
+                if r2 is None or r2.status_code >= 400:
+                    if r2 is not None:
+                        h2 = (r2.text or "")[:400].replace("\n", " ")
+                        print(f"  [Brave LLM Context] GET fallback HTTP {r2.status_code} — {h2 or r2.reason}")
+                    return ""
+                r = r2
+            else:
+                return ""
         data = r.json()
     except requests.RequestException as e:
         print(f"  [Brave LLM Context] Erreur : {e}")
@@ -137,21 +239,24 @@ def fetch_brave_web_search_context(query: str, api_key: str, timeout: int = 30) 
     Repli : Web Search avec extra_snippets.
     https://api-dashboard.search.brave.com/documentation/services/web-search
     """
+    q = clamp_brave_query(query)
+    if not q:
+        return ""
     params = {
-        "q": query,
+        "q": q,
         "country": "FR",
         "search_lang": "fr",
-        "count": 10,
+        "count": 8,
         "extra_snippets": "true",
     }
     try:
-        r = requests.get(
-            BRAVE_WEB_SEARCH_URL,
-            params=params,
-            headers=_brave_headers(api_key),
-            timeout=timeout,
-        )
-        r.raise_for_status()
+        r = _brave_request("GET", BRAVE_WEB_SEARCH_URL, api_key=api_key, params=params, timeout=timeout)
+        if r is None:
+            return ""
+        if r.status_code >= 400:
+            hint = (r.text or "")[:400].replace("\n", " ")
+            print(f"  [Brave Web Search] HTTP {r.status_code} — {hint or r.reason}")
+            return ""
         data = r.json()
     except requests.RequestException as e:
         print(f"  [Brave Web Search] Erreur : {e}")
@@ -194,9 +299,12 @@ def fetch_page(url: str, timeout: int = 8) -> str:
 
 def search_ddg(query: str, max_results: int = MAX_RESULTS_LEGACY) -> list[dict]:
     try:
-        from duckduckgo_search import DDGS
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
     except ImportError:
-        print("  [DDG] Paquet duckduckgo-search non installé.")
+        print("  [DDG] Installez `ddgs` ou `duckduckgo-search`.")
         return []
     try:
         with DDGS() as ddgs:
@@ -206,9 +314,20 @@ def search_ddg(query: str, max_results: int = MAX_RESULTS_LEGACY) -> list[dict]:
         return []
 
 
+def _ddg_legal_bias_query(query: str) -> str:
+    """Oriente les résultats vers des sources françaises plutôt que du bruit international."""
+    q = query.strip()
+    if not q:
+        return q
+    return (
+        f"{q} (site:legifrance.gouv.fr OR site:service-public.fr "
+        f"OR site:solidarites.gouv.fr OR site:ameli.fr OR site:interieur.gouv.fr)"
+    )
+
+
 def fetch_context_legacy_ddg_scrape(query: str) -> str:
     """Ancien pipeline : DDG + scrape BeautifulSoup."""
-    results = search_ddg(query)
+    results = search_ddg(_ddg_legal_bias_query(query))
     if not results:
         return ""
     context_parts = []
@@ -413,8 +532,9 @@ def run():
         save_result(output_dir, item["slug"], item["title"], result, item["query"], source_note)
 
         if i < len(todo):
-            print("  Pause 3s...")
-            time.sleep(3)
+            pause = BRAVE_BETWEEN_FICHES_S if not args.fallback_ddg else 3.0
+            print(f"  Pause {pause:.0f}s (évite 429 Brave / surcharge)…")
+            time.sleep(pause)
 
     total = len(list(output_dir.glob("*.md")))
     print(f"\n{'=' * 60}")

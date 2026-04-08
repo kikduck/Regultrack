@@ -50,7 +50,13 @@ python research.py securite-privee --fallback-ddg   # sans Brave : ancien DDG + 
 
 Le script reprend les fiches **déjà présentes** (il ne réécrit pas les `.md` existants), sauf si vous passez un préfixe de slug pour forcer une cible.
 
-**Ordre des sources** : Brave LLM Context → si vide, Brave Web Search (`extra_snippets`) → si encore vide, repli DuckDuckGo + scrape (si `duckduckgo-search` et `beautifulsoup4` sont installés).
+**Ordre des sources** : Brave LLM Context → si vide, Brave Web Search (`extra_snippets`) → si encore vide, repli DuckDuckGo + scrape (si `duckduckgo-search` / `ddgs` et `beautifulsoup4` sont installés).
+
+**Dépannage**
+
+- **HTTP 400** sur LLM Context : souvent requête `q` trop longue (limite ~400 caractères / 50 mots côté Brave) — le script tronque désormais automatiquement ; en cas d’échec persistant, vérifiez que votre abonnement inclut bien [LLM Context](https://api-dashboard.search.brave.com/documentation/services/llm-context) (sinon 400/403 selon le compte).
+- **HTTP 429** : quota ou débit — le script espace les appels (~0,55 s entre requêtes Brave) et **6 s entre chaque fiche** par défaut. Ajustez avec la variable d’environnement `BRAVE_BETWEEN_FICHES_S` (ex. `12` si besoin).
+- **Repli DDG** : les requêtes sont biaisées vers `legifrance.gouv.fr`, `service-public.fr`, etc., pour limiter le hors-sujet géographique.
 
 ## Fiabiliser les seeds (workflow)
 
