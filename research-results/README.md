@@ -1,34 +1,62 @@
-# Résultats de recherche réglementaire (local)
+# Résultats de recherche réglementaire (local + outillage versionné)
 
-Ce dossier est **principalement ignoré par Git** (voir `.gitignore`) : les exports du stack *deep research* Docker et les gros fichiers restent sur votre machine. Seul ce `README.md` est versionné pour documenter la convention.
+## Ce qui est versionné (Git)
 
-## Convention de nommage
+- `README.md` — cette convention
+- `research.py` — lanceur (DuckDuckGo + scrape + Ollama)
+- `queries/*.py` — **liste des questions** par secteur (alignée sur les seeds à fiabiliser)
+
+## Ce qui reste local (ignoré par Git)
+
+- Les dossiers de **sortie** `securite-privee/`, `creches/`, `ehpad/`, `ambulances/` (fiches `.md` générées)
+- Scripts expérimentaux type `research_direct.py` si vous en ajoutez
+
+L’assistant / l’IDE **peuvent lire** tout le dossier sur votre disque ; seul le contrôle de version exclut les `.md` produits pour ne pas polluer le dépôt.
+
+## Lancer la deep research (machine locale)
+
+Prérequis : Python avec `requests`, `beautifulsoup4`, `duckduckgo-search`, et **Ollama** avec le modèle configuré dans `research.py` (par défaut `gemma4:26b`).
+
+```bash
+cd research-results
+pip install requests beautifulsoup4 duckduckgo-search
+python research.py                     # défaut : securite-privee
+python research.py creches
+python research.py ehpad
+python research.py ambulances
+python research.py creches 01          # une seule fiche (slug commençant par 01)
+```
+
+Le script reprend les fiches **déjà présentes** (il ne réécrit pas les `.md` existants), sauf si vous passez un préfixe de slug pour forcer une cible.
+
+## Fiabiliser les seeds (workflow)
+
+1. Générer ou mettre à jour les fiches `.md` pour le secteur concerné.
+2. Ouvrir les fiches et les `supabase/seeds/seed_<secteur>_upsert.sql`.
+3. Ajuster `renewal_months`, `legal_reference`, `renewal_process`, `help_text`, `last_verified_at`, `verified_by` pour coller aux sources et à la synthèse du modèle.
+4. Si une fiche révèle un trou dans les requêtes, **éditer `queries/<secteur>.py`** puis relancer la recherche.
+
+## Convention de nommage des sorties
 
 | Élément | Règle |
 |--------|--------|
-| Dossier secteur | **kebab-case**, en français court : `securite-privee`, `creches`, `ehpad`, `ambulances`, `pharmacies` |
-| Fiches | `NN_theme_court.md` avec `NN` = ordre d’importance (01, 02, …) |
-| Contenu | Métadonnées en tête (date, modèle, requête), puis champs alignés sur `obligation_templates` quand c’est possible |
+| Dossier secteur | Comme `OUTPUT_SUBDIR` dans `queries/*.py` : `securite-privee`, `creches`, `ehpad`, `ambulances` |
+| Fiches | `NN_theme_court.md` |
+| Contenu visé | Champs du type **Applies_to**, **Renewal_months**, **Legal_reference**, etc. (pour copier vers `obligation_templates`) |
 
-## Secteurs prévus
+## Secteurs
 
-- `securite-privee/` — référence existante (12 fiches)
-- `creches/` — accueil du jeune enfant, PMI, ERP type R (à compléter par la recherche)
-- `ehpad/` — ESSMS, ARS, HAS, AFGSU (à compléter)
-- `ambulances/` — transport sanitaire, agrément, FCA DEA (à compléter)
-- `pharmacies/` — réservé futur registre
+- `securite-privee/` — 12 fiches historiques (générées avant le découplage `queries/`)
+- `creches/`, `ehpad/`, `ambulances/` — à remplir via `python research.py …`
+- `pharmacies/` — réservé (ajouter `queries/pharmacies.py` quand le registre sera prêt)
 
 ## Lien avec les seeds Supabase
 
-Les seeds rerunnable sont dans `supabase/seeds/` :
+- `supabase/seeds/seed_securite_privee_upsert.sql`
+- `supabase/seeds/seed_creches_upsert.sql`
+- `supabase/seeds/seed_ehpad_upsert.sql`
+- `supabase/seeds/seed_ambulances_upsert.sql`
 
-- `seed_securite_privee_upsert.sql`
-- `seed_creches_upsert.sql`
-- `seed_ehpad_upsert.sql`
-- `seed_ambulances_upsert.sql`
+## Stack Docker (recherche lourde optionnelle)
 
-Après génération de nouvelles fiches dans `research-results/<secteur>/`, mettre à jour le seed correspondant et ajuster `last_verified_at` / `verified_by` dans le `INSERT`.
-
-## Commande Docker (rappel)
-
-Depuis `docker/` : `docker compose -f docker-compose.research.yml up -d` (voir `CHECKLIST.md`).
+Depuis `docker/` : `docker compose -f docker-compose.research.yml up -d` (voir `CHECKLIST.md`). Le script `research.py` peut fonctionner **sans** ce compose s’Ollama tourne déjà en local.
