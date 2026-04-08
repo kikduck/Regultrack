@@ -522,6 +522,7 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 - **Comportement par défaut :** `show_sector_onboarding = false` → toute nouvelle organisation reste en **sécurité privée**, comme aujourd’hui.
 - **Quand les seeds métier d’un secteur sont prêts :** ajouter les templates SQL pour ce secteur, **puis** étendre `onboarding_sector_codes` et passer `show_sector_onboarding` à `true` si tu veux un **vrai** multi-choix (l’UI n’affiche la liste que s’il y a **au moins deux** codes). Détail opérationnel et exemple SQL : **`CHECKLIST.md`**, section *Multi-secteur SaaS (préparation technique)*.
 - **Libellés** affichés (paramètres, onboarding) : `src/lib/sectors.ts` — à enrichir au fil des lancements.
+- **Démo / support :** remettre un compte sur le parcours `/setup` (sans toucher à `auth.users`) — procédure SQL (destruction des données org ou simple détachement du profil), garde-fous et Storage : **`CHECKLIST.md`**, section *Opérations — Remise à zéro d’un compte*.
 
 ---
 

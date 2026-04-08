@@ -250,6 +250,48 @@ set
 where id = 1;
 ```
 
+### Opérations — Remise à zéro d’un compte (retour phase `/setup`)
+
+> Utile pour **démo**, **tests**, ou **support** : refaire l’écran de configuration (nom entreprise, secteur si multi-secteur activé) comme après un premier signup.
+
+**Règle produit :** tant que `profiles.org_id` est `null`, l’app renvoie vers **`/setup`** (ex. depuis `/dashboard`, `/sites`, `/employees`, `/obligations`).
+
+#### Option A — Remise à zéro complète (supprime toutes les données de l’organisation)
+
+À exécuter dans le **SQL Editor** Supabase (rôle `postgres` / contournement RLS).
+
+1. Identifier l’utilisateur et son organisation :
+
+```sql
+select p.id as profile_id, p.org_id, p.full_name, u.email
+from public.profiles p
+join auth.users u on u.id = p.id
+where u.email = 'email@du-compte.exemple';
+```
+
+2. Supprimer l’organisation (remplacer `ORG_UUID` par `org_id`) :
+
+```sql
+delete from public.organizations
+where id = 'ORG_UUID';
+```
+
+Effets : `profiles.org_id` repasse à **`null`** pour tous les profils liés (`ON DELETE SET NULL`) ; en **cascade** : sites, employés, obligations, preuves, `job_titles`, etc.
+
+**Garde-fous :** plusieurs comptes sur la **même** org → tous perdent l’org. Les fichiers du **bucket Storage** `proofs` ne sont pas supprimés automatiquement ; nettoyage manuel si besoin.
+
+#### Option B — Détacher seulement ce profil (données org conservées / orphelines)
+
+```sql
+update public.profiles
+set org_id = null
+where id = 'UUID_AUTH_DU_COMPTE';
+```
+
+L’utilisateur refait `/setup` ; l’ancienne ligne `organizations` et ses données restent en base (peut convenir pour un test rapide, à éviter en prod si tu veux un état propre).
+
+---
+
 ### Audit navigateur — écarts constatés (avril 2026)
 
 > Parcours manuel connecté : `/dashboard`, `/sites`, `/employees`, `/sites/new`, `/employees/new`, `/landing`. Objectif : noter ce qui manque ou grince dans l’UI actuelle par rapport à la vision produit (sans doublon inutile avec les phases ci-dessous — renvois indiqués).
@@ -734,6 +776,8 @@ Alerte interne back-office → validation humaine obligatoire
 | 06/04/2026 | ✅ Phase 2.3 impl. — historique preuves UI, SHA-256 upload, migration `005`, tests `proof-display.test.ts` |
 | 08/04/2026 | 📝 Section *Validation marché & retour consultant* + prospection API publique (`scripts/prospecting/`) ; alignement `conformite-multi-sites.md` (risques, prospection, synthèse externe) |
 | 08/04/2026 | 📝 Hub `docs/prospects/` — registre `sectors.json`, `fetch_sector_prospects.py`, `sirene_api.py`, 5 nouveaux secteurs (EHPAD, restauration 56.29A, ambulances, OF, pharmacies), `SYNTHESE-COMPARATIVE-SECTEURS.md`, notebook `analyse_prospects_sectoriel.ipynb`, `stats-secteurs.json` |
+| 08/04/2026 | ✅ Préparation multi-secteur SaaS : migration `008_saas_settings.sql`, `saas_settings`, logique `/setup` + `setup-org`, `src/lib/sectors.ts` ; doc dans `conformite-multi-sites.md` §12 |
+| 08/04/2026 | 📝 **Opérations** : procédure SQL « remise à zéro compte » (retour `/setup`) documentée — section *Opérations — Remise à zéro d’un compte* ci-dessus ; rappel Storage `proofs` |
 
 ---
 

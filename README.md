@@ -1,3 +1,15 @@
+# Regultrack
+
+Outil de suivi de conformité multi-sites (verticalisations sectorielles).
+
+| Document | Rôle |
+|----------|------|
+| [`CHECKLIST.md`](CHECKLIST.md) | Plan produit, phases, **suivi des avancements**, opérations (ex. remise à zéro compte) |
+| [`conformite-multi-sites.md`](conformite-multi-sites.md) | Vision produit, marché, positionnement |
+| [`supabase/README.md`](supabase/README.md) | Migrations, seeds, conventions SQL |
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

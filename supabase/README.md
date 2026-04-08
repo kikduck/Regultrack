@@ -100,6 +100,12 @@ Exemple : crèches privées
 2. lui donner une clé métier stable
 3. utiliser `ON CONFLICT`
 
+### Cas D. Remise à zéro d’un compte (retour écran `/setup`)
+
+Pour une démo ou du support : remettre un utilisateur comme **avant** la création d’organisation (`profiles.org_id` → `null`), éventuellement en **supprimant** l’organisation et les données associées (cascade).
+
+**Procédure complète (deux options, garde-fous multi-utilisateurs, Storage)** : voir [`CHECKLIST.md`](../CHECKLIST.md), section *Opérations — Remise à zéro d’un compte*.
+
 ## Passage progressif au CLI
 
 Le repo a maintenant ces scripts :
