@@ -236,11 +236,12 @@ Les fichiers `data/prospects_*` sont ignorés par git (voir `.gitignore`).
 > Objectif : pouvoir proposer **plusieurs secteurs** à l’onboarding **sans** les activer tant que les seeds métier ne sont pas prêts. Pilotage **en base** (pas seulement par variable d’environnement).
 
 - [x] **Migration** `008_saas_settings.sql` : table singleton `public.saas_settings` (`id = 1`) avec `show_sector_onboarding` (bool, défaut `false`) et `onboarding_sector_codes` (`text[]`, défaut `{securite_privee}`). **RLS** : `select` pour `authenticated` ; mise à jour réservée au **SQL dashboard / service role**.
+- [x] **Migration** `009_saas_onboarding_multi_sector.sql` : **exemple d’activation** en dépôt — met `show_sector_onboarding = true` et `onboarding_sector_codes` incluant `securite_privee`, `creches`, `ehpad`, `ambulances`. À n’appliquer en **prod** que lorsque les **templates** de chaque code listé sont réellement présents en base (sinon risque de choix vide ou incomplet côté client).
 - [x] **API** `/api/auth/setup-org` : secteur effectif = toujours **sécurité privée** si le drapeau est `false` ; sinon validation **stricte** sur `onboarding_sector_codes` (plusieurs codes → le client doit envoyer un `sector` reconnu).
 - [x] **Page** `/setup` : liste déroulante **uniquement** si `show_sector_onboarding` **et** au moins **2** codes dans `onboarding_sector_codes`.
 - [x] **Libellés FR** des codes produit : `src/lib/sectors.ts` (codes snake_case alignés sur `organizations.sector` / `obligation_templates.sector`).
-- [ ] **Seeds** `obligation_templates` (et éventuellement pages landing) pour crèches, EHPAD, ambulances, pharmacies — **quand le contenu réglementaire est validé**.
-- [ ] **Activation** en production après seeds : exemple (à adapter) :
+- [ ] **Seeds** `obligation_templates` : fichiers `supabase/seeds/seed_*_upsert.sql` (crèches, EHPAD, ambulances, sécurité privée, etc.) — **déployer et valider le contenu réglementaire** avant exposition large ; landing par secteur en option.
+- [ ] **Activation** en production après seeds : soit appliquer la migration `009`, soit adapter manuellement, par exemple :
 
 ```sql
 update public.saas_settings
@@ -303,6 +304,7 @@ L’utilisateur refait `/setup` ; l’ancienne ligne `organizations` et ses donn
 #### Navigation et pages absentes dans la sidebar
 
 - [x] **Lien vers la vue globale des obligations** : `/obligations` (tableau filtrable, Phase 2.2) + entrée sidebar.
+- [x] **Page `/organisation`** : obligations `applies_to = organization` (autorisations société, RC Pro, etc.), filtres par statut, entrée **Organisation** dans la sidebar (`Landmark`).
 - [x] **`/settings`** : onglets Général, Compte, Habilitations, Alertes, Abonnement (Phases 1.4 / 1.5 / placeholders Phase 3.1 & 10).
 - [x] **Entrée sidebar « Alertes »** : lien de navigation principal vers la configuration des alertes (ex. `/alerts` réutilisant le même écran que Phase 3.1) pour **programmer les alertes de manière précise** (seuils J-X, périmètre, destinataires) sans les laisser uniquement dans Paramètres. **Par défaut**, les alertes liées aux **dates d'expiration** des obligations sont **déjà actives / programmées** (seuils issus du registre métier et des templates, ex. J-90 / J-30 / J-7) : l’utilisateur affine ou coupe certains canaux là où c’est autorisé, mais le produit n’est pas « muet » à l’inscription. **Implémenté** : `src/app/(app)/alerts/`, composant partagé `src/components/alerts-preferences-panel.tsx`, lien croisé avec `/settings/alerts`, état actif sidebar (Alertes vs Paramètres).
 - [x] **Page `/legal`** (CGU, confidentialité, RGPD — squelette à compléter avant commercialisation large) + lien depuis le pied de page de `/landing`.
@@ -348,7 +350,7 @@ L’utilisateur refait `/setup` ; l’ancienne ligne `organizations` et ses donn
 - [x] **Aide contextuelle par obligation** : composant `ObligationCard` affichant `help_text`, procédures, pièces requises et liens officiels
 - [x] **CTA upload sur obligations `missing`** : bouton mis en avant sur les fiches obligations
 - [x] **Affichage jours restants** : calcul automatique et badge de statut temporel sur chaque obligation
-- [x] **Vue obligations organisation** : section dédiée dans le dashboard pour les obligations d'entreprise (Autorisation CNAPS, RC Pro)
+- [x] **Vue obligations organisation** : section dédiée dans le dashboard pour les obligations d'entreprise (Autorisation CNAPS, RC Pro) ; page dédiée **`/organisation`** pour le même périmètre avec filtres par statut
 - [x] **Redirection post-signup** : flux robuste redirigeant vers `/setup` si l'organisation n'est pas encore configurée
 
 #### 1.4 — Postes personnalisables (inspiré EnRègle) ✅
@@ -395,7 +397,7 @@ L’utilisateur refait `/setup` ; l’ancienne ligne `organizations` et ses donn
 - [x] **Dashboard refondu** : grille de sites avec bordure gauche colorée (rouge/orange/vert) selon pire statut + score % par site + mini-compteurs. Fix « Tout est en règle » → « Aucune échéance urgente ».
 - [x] **Filtres dashboard** : par statut (pire statut du site), recherche par nom de site.
 - [x] **Compteur par catégorie par site** : ✓ valid / ⚠ expiring / ✕ expired / ? missing visible directement sur chaque carte de site.
-- [x] **Vue « toutes les obligations »** : page /obligations avec tableau filtrable par statut (onglets pills + compteurs) + tri urgence. Lien dans la sidebar.
+- [x] **Vue « toutes les obligations »** : page `/obligations` avec filtre par statut (pills + compteurs), tri urgence, **filtres colonnes** (type d’obligation, entité concernée, plage d’échéance / sans échéance) via query params. Lien dans la sidebar.
 
 #### 2.3 — Historique et versioning des preuves ✅
 
@@ -778,6 +780,7 @@ Alerte interne back-office → validation humaine obligatoire
 | 08/04/2026 | 📝 Hub `docs/prospects/` — registre `sectors.json`, `fetch_sector_prospects.py`, `sirene_api.py`, 5 nouveaux secteurs (EHPAD, restauration 56.29A, ambulances, OF, pharmacies), `SYNTHESE-COMPARATIVE-SECTEURS.md`, notebook `analyse_prospects_sectoriel.ipynb`, `stats-secteurs.json` |
 | 08/04/2026 | ✅ Préparation multi-secteur SaaS : migration `008_saas_settings.sql`, `saas_settings`, logique `/setup` + `setup-org`, `src/lib/sectors.ts` ; doc dans `conformite-multi-sites.md` §12 |
 | 08/04/2026 | 📝 **Opérations** : procédure SQL « remise à zéro compte » (retour `/setup`) documentée — section *Opérations — Remise à zéro d’un compte* ci-dessus ; rappel Storage `proofs` |
+| 09/04/2026 | ✅ **UX app** : page `/organisation` (obligations siège + filtres statut), filtres avancés sur `/obligations`, navigation retour (`PageBackNav`), marqueurs champs requis accessibles (`RequiredFieldMark`), ligne employé tableau extraite (`EmployeeTableRow`), alignement pages auth / setup / sites / employés / paramètres |
 
 ---
 
@@ -796,7 +799,7 @@ Alerte interne back-office → validation humaine obligatoire
    - 1.1 ✅ CRUD complet (fait)
    - 1.2 ✅ Auto-création obligations (fait)
    - 1.3 ✅ UX verticale (fait)
-   - 1.4 Postes personnalisables (inspiré EnRègle) — à faire
+   - 1.4 ✅ Postes personnalisables (inspiré EnRègle) — fait
 2. **Phase 2.1 + 2.2** — moteur d'écart + vue siège (la promesse centrale)
 3. **Phase 3** — alertes email sectorielles (la valeur récurrente)
 4. **Phase 5** — export PDF sectoriel (dossier d'inspection en 30 secondes)

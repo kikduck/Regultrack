@@ -189,7 +189,7 @@ Pas juste "des documents". Chaque type d'obligation a sa logique : à quelle fr�
 Pour chaque site et chaque obligation : est-ce que la preuve existe ? Est-elle valide ? Expire-t-elle bientôt ? Ce moteur est le cœur du produit. Sans lui, c'est une GED.
 
 **Vue siège consolidée**
-Tableau de bord global : code couleur par site (vert / orange / rouge), filtrable par type d'obligation, par site, par délai. Un coup d'œil suffit pour savoir où agir.
+Tableau de bord global : code couleur par site (vert / orange / rouge), filtrable par type d'obligation, par site, par délai. Un coup d'œil suffit pour savoir où agir. Une page **Organisation** regroupe les obligations au niveau **siège** (autorisations, RC Pro, etc.), avec les mêmes logiques de statut et de filtrage que le reste de l’app.
 
 **Alertes automatiques**
 À J-90, J-30, J-7 selon la criticité, adressées à la bonne personne (responsable de site, RH, direction). Pas un rappel de calendrier — une notification contextuelle avec le lien direct vers la pièce à renouveler. **Par défaut**, ces rappels d’**expiration** sont déjà programmés selon le secteur ; une entrée **« Alertes » dans la sidebar** permet d’ajuster finement (seuils, périmètre, destinataires) sans partir d’un produit « muet » à l’inscription.
@@ -520,7 +520,7 @@ Cette connaissance s'acquiert en passant du temps avec les clients. Les 12 premi
 
 - **Table** `public.saas_settings` (singleton `id = 1`) : `show_sector_onboarding` indique si le parcours `/setup` doit proposer un **choix de secteur** ; `onboarding_sector_codes` liste les **codes** autorisés (même convention que `organizations.sector` / `obligation_templates.sector`, ex. `securite_privee`, `creches`).
 - **Comportement par défaut :** `show_sector_onboarding = false` → toute nouvelle organisation reste en **sécurité privée**, comme aujourd’hui.
-- **Quand les seeds métier d’un secteur sont prêts :** ajouter les templates SQL pour ce secteur, **puis** étendre `onboarding_sector_codes` et passer `show_sector_onboarding` à `true` si tu veux un **vrai** multi-choix (l’UI n’affiche la liste que s’il y a **au moins deux** codes). Détail opérationnel et exemple SQL : **`CHECKLIST.md`**, section *Multi-secteur SaaS (préparation technique)*.
+- **Quand les seeds métier d’un secteur sont prêts :** déployer les templates SQL (`supabase/seeds/`, puis migrations ou `db push`), **puis** étendre `onboarding_sector_codes` et passer `show_sector_onboarding` à `true` si tu veux un **vrai** multi-choix (l’UI n’affiche la liste que s’il y a **au moins deux** codes). Le dépôt inclut une migration d’**exemple** `009_saas_onboarding_multi_sector.sql` qui active le choix pour `securite_privee`, `creches`, `ehpad`, `ambulances` : à n’appliquer en **production** que si chaque code listé a bien ses **obligation_templates** en base (sinon choix vide ou trompeur pour le client). Détail et garde-fous : **`CHECKLIST.md`**, section *Multi-secteur SaaS (préparation technique)*.
 - **Libellés** affichés (paramètres, onboarding) : `src/lib/sectors.ts` — à enrichir au fil des lancements.
 - **Démo / support :** remettre un compte sur le parcours `/setup` (sans toucher à `auth.users`) — procédure SQL (destruction des données org ou simple détachement du profil), garde-fous et Storage : **`CHECKLIST.md`**, section *Opérations — Remise à zéro d’un compte*.
 
