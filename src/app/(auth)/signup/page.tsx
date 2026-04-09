@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Shield } from "lucide-react";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -78,6 +79,7 @@ export default function SignupPage() {
               className="block text-sm font-medium text-gray-700"
             >
               Nom de votre entreprise
+              <RequiredFieldMark />
             </label>
             <input
               id="orgName"
@@ -96,6 +98,7 @@ export default function SignupPage() {
               className="block text-sm font-medium text-gray-700"
             >
               Votre nom complet
+              <RequiredFieldMark />
             </label>
             <input
               id="fullName"
@@ -114,6 +117,7 @@ export default function SignupPage() {
               className="block text-sm font-medium text-gray-700"
             >
               Email professionnel
+              <RequiredFieldMark />
             </label>
             <input
               id="email"
@@ -132,6 +136,7 @@ export default function SignupPage() {
               className="block text-sm font-medium text-gray-700"
             >
               Mot de passe
+              <RequiredFieldMark />
             </label>
             <input
               id="password"

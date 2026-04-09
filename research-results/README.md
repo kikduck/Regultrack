@@ -35,8 +35,9 @@ Documentation utile :
 
 - Python 3.10+
 - `pip install -r research-results/requirements.txt` (minimum : `requests`)
-- **Ollama** démarré (`ollama serve`) avec le modèle indiqué par `OLLAMA_MODEL` (défaut `gemma4:26b`). Le script appelle `GET /api/tags` sur `OLLAMA_HOST` ou l’hôte dérivé de `OLLAMA_URL` **avant** les requêtes Brave. Si la synthèse échoue, **aucun `.md` n’est écrit** (évite les fiches contenant uniquement `[Erreur Ollama …]`).
+- **Ollama** démarré (`ollama serve`) avec le modèle indiqué par `OLLAMA_MODEL` (défaut dans `research.py` si non défini). Le script appelle `GET /api/tags` sur `OLLAMA_HOST` ou l’hôte dérivé de `OLLAMA_URL` **avant** les requêtes Brave. Si la synthèse échoue, **aucun `.md` n’est écrit** (évite les fiches contenant uniquement `[Erreur Ollama …]`).
 - Variables optionnelles : `OLLAMA_URL` (défaut `http://localhost:11434/api/chat`), `OLLAMA_HOST` (ex. `http://localhost:11434`), `OLLAMA_MODEL`.
+- **Contexte Ollama** : pour savoir si le prompt tient dans la fenêtre du modèle, lancez avec `OLLAMA_PROMPT_STATS=1` ou `--prompt-stats`. Le script affiche la taille du prompt, une estimation de tokens (÷4), le plafond `CONTEXT_CHAR_BUDGET` (défaut 28 000 caractères pour le contexte web injecté), et compare au `num_ctx` du modèle (`OLLAMA_NUM_CTX` si défini, sinon métadonnées `POST /api/show`). La réserve pour la génération est configurable via `OLLAMA_GEN_RESERVE_TOKENS` (défaut 2048).
 
 ```bash
 cd research-results
@@ -59,7 +60,7 @@ Le script reprend les fiches **déjà présentes** (il ne réécrit pas les `.md
 
 - **`OPTION_NOT_IN_PLAN` (HTTP 400)** : l’option [LLM Context](https://api-dashboard.search.brave.com/documentation/services/llm-context) n’est **pas** incluse dans votre forfait Brave. Le script **détecte ce code une fois**, affiche une note, puis n’appelle plus LLM Context pendant la session et utilise uniquement [Web Search](https://api-dashboard.search.brave.com/documentation/services/web-search). Pour forcer ce mode dès le départ : `BRAVE_WEB_SEARCH_ONLY=1` dans l’environnement ou `.env.local`.
 - **Autres HTTP 400** sur LLM Context : parfois requête `q` trop longue — le script tronque automatiquement (~380 caractères / 48 mots).
-- **HTTP 429** : quota ou débit — le script espace les appels (~0,55 s entre requêtes Brave) et **6 s entre chaque fiche** par défaut. Ajustez avec la variable d’environnement `BRAVE_BETWEEN_FICHES_S` (ex. `12` si besoin).
+- **HTTP 429** : quota ou débit — le script espace les appels (~0,55 s entre requêtes Brave) et **0,5 s entre chaque fiche** par défaut. Ajustez avec la variable d’environnement `BRAVE_BETWEEN_FICHES_S` (ex. `6` ou `12` si vous subissez des 429).
 - **Repli DDG** : les requêtes sont biaisées vers `legifrance.gouv.fr`, `service-public.fr`, etc., pour limiter le hors-sujet géographique.
 
 ## Fiabiliser les seeds (workflow)

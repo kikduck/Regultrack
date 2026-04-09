@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { onboardingSectorOptions, sectorLabelFr } from "@/lib/sectors";
 import { useRouter } from "next/navigation";
 import { Shield, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function SetupPage() {
   const [orgName, setOrgName] = useState("");
@@ -175,7 +176,10 @@ export default function SetupPage() {
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nom complet</label>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                      Nom complet
+                      <RequiredFieldMark />
+                    </label>
                     <input
                       type="text"
                       required
@@ -187,7 +191,10 @@ export default function SetupPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nom de l'entreprise</label>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                      Nom de l&apos;entreprise
+                      <RequiredFieldMark />
+                    </label>
                     <input
                       type="text"
                       required
@@ -202,6 +209,7 @@ export default function SetupPage() {
                     <div>
                       <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
                         Secteur d&apos;activité
+                        <RequiredFieldMark />
                       </label>
                       <select
                         required

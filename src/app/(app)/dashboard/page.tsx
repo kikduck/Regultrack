@@ -158,10 +158,18 @@ export default async function DashboardPage({
       {/* Obligations de l'entreprise */}
       {orgObligations.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-gray-400" />
-            Obligations de l&apos;entreprise
-          </h2>
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-gray-400" />
+              Obligations de l&apos;entreprise
+            </h2>
+            <Link
+              href="/organisation"
+              className="text-sm font-medium text-primary hover:text-primary-dark shrink-0"
+            >
+              Voir tout
+            </Link>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {orgObligations.map((o) => (
               <div

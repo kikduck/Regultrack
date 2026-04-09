@@ -6,6 +6,7 @@ import { Plus, HelpCircle, AlertCircle, Trash2, Edit2, ShieldCheck, User, Buildi
 import { cn } from "@/lib/utils";
 import type { ObligationTemplate } from "@/lib/types/database";
 import { renewalMonthsLabelFr } from "@/lib/format-renewal";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 interface CustomTemplate {
   id: string;
@@ -17,7 +18,7 @@ interface CustomTemplate {
   created_at: string;
 }
 
-export default function HabilitationsPage() {
+export default function ObligationsSettingsPage() {
   const [standardTemplates, setStandardTemplates] = useState<ObligationTemplate[]>([]);
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,7 @@ export default function HabilitationsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer cette habilitation ?")) return;
+    if (!confirm("Voulez-vous vraiment supprimer cette obligation personnalisée ?")) return;
 
     const { error } = await supabase
       .from("custom_obligation_templates")
@@ -117,7 +118,7 @@ export default function HabilitationsPage() {
     return (
       <div className="p-12 text-center text-gray-500 flex flex-col items-center gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        Chargement des habilitations...
+        Chargement des obligations...
       </div>
     );
   }
@@ -126,7 +127,7 @@ export default function HabilitationsPage() {
     <div className="divide-y divide-gray-100 relative">
       <div className="p-6 lg:p-8 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Registre des habilitations</h2>
+          <h2 className="text-xl font-bold text-gray-900">Registre des obligations</h2>
           <p className="mt-1 text-sm text-gray-500">
             Gérez les obligations réglementaires suivies pour votre organisation.
           </p>
@@ -136,13 +137,13 @@ export default function HabilitationsPage() {
           className="inline-flex items-center gap-2 bg-primary px-4 py-2 rounded-lg text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Nouvelle habilitation
+          Nouvelle obligation
         </button>
       </div>
 
       <div className="p-6 lg:p-8">
         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
-          Habilitations standards (Secteur)
+          Obligations standards (secteur)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {standardTemplates.map((template) => (
@@ -167,12 +168,12 @@ export default function HabilitationsPage() {
         </div>
 
         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-10 mb-4">
-          Habilitations personnalisées
+          Obligations personnalisées
         </h3>
         {customTemplates.length === 0 ? (
           <div className="py-12 border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center text-center">
             <ShieldCheck className="h-12 w-12 text-gray-200 mb-3" />
-            <p className="text-gray-500 text-sm font-medium">Aucune habilitation personnalisée</p>
+            <p className="text-gray-500 text-sm font-medium">Aucune obligation personnalisée</p>
             <p className="text-gray-400 text-xs mt-1">Ajoutez vos propres obligations internes ou contractuelles.</p>
           </div>
         ) : (
@@ -208,12 +209,12 @@ export default function HabilitationsPage() {
         )}
       </div>
 
-      {/* Modal Nouvelle Habilitation */}
+      {/* Modal nouvelle obligation personnalisée */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">Nouvelle habilitation personnalisée</h3>
+              <h3 className="text-lg font-bold text-gray-900">Nouvelle obligation personnalisée</h3>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
@@ -221,13 +222,16 @@ export default function HabilitationsPage() {
             
             <form onSubmit={handleCreate} className="p-6 space-y-5">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Nom de l'habilitation</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Nom de l&apos;obligation
+                  <RequiredFieldMark />
+                </label>
                 <input
                   type="text"
                   required
                   autoFocus
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
-                  placeholder="Ex: Habilitation Aéroport CDG"
+                  placeholder="Ex: Accès zone sensible (aéroport)"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
@@ -238,7 +242,7 @@ export default function HabilitationsPage() {
                 <textarea
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm resize-none"
                   rows={2}
-                  placeholder="Expliquez brièvement à quoi sert cette habilitation."
+                  placeholder="Expliquez brièvement à quoi sert cette obligation."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
@@ -288,7 +292,7 @@ export default function HabilitationsPage() {
                       Création...
                     </>
                   ) : (
-                    "Créer l'habilitation"
+                    "Créer l'obligation"
                   )}
                 </button>
               </div>

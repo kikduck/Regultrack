@@ -45,8 +45,18 @@ MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:30b-a3b-q4_K_M") #gemma4:26b
 BRAVE_WEB_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 BRAVE_LLM_CONTEXT_URL = "https://api.search.brave.com/res/v1/llm/context"
 
-# Contexte envoyé au modèle local (caractères max pour limiter le prompt)
-CONTEXT_CHAR_BUDGET = 28_000
+# Contexte injecté dans le prompt (tronqué avant envoi à Ollama). Surcharge : CONTEXT_CHAR_BUDGET dans .env.
+_DEFAULT_CONTEXT_CHAR_BUDGET = 28_000
+
+
+def get_context_char_budget() -> int:
+    v = os.environ.get("CONTEXT_CHAR_BUDGET", "").strip()
+    return int(v) if v.isdigit() else _DEFAULT_CONTEXT_CHAR_BUDGET
+
+
+def get_ollama_gen_reserve_tokens() -> int:
+    v = os.environ.get("OLLAMA_GEN_RESERVE_TOKENS", "").strip()
+    return int(v) if v.isdigit() else 2048
 
 MAX_RESULTS_LEGACY = 6
 MAX_CHARS_LEGACY = 1200
@@ -56,7 +66,7 @@ BRAVE_Q_MAX_CHARS = 380
 BRAVE_Q_MAX_WORDS = 48
 # Débit : ~2 req/s sur le plan gratuit — espacer les appels et retenter les 429.
 BRAVE_MIN_INTERVAL_S = 0.55
-BRAVE_BETWEEN_FICHES_S = float(os.environ.get("BRAVE_BETWEEN_FICHES_S", "6"))
+BRAVE_BETWEEN_FICHES_S = float(os.environ.get("BRAVE_BETWEEN_FICHES_S", "0.5"))
 # Forcer Web Search uniquement (équivalent à détection OPTION_NOT_IN_PLAN).
 _BRAVE_WEB_SEARCH_ONLY = os.environ.get("BRAVE_WEB_SEARCH_ONLY", "").lower() in ("1", "true", "yes")
 # ──────────────────────────────────────────────
@@ -67,6 +77,8 @@ _BRAVE_LLM_CONTEXT_UNAVAILABLE: bool = _BRAVE_WEB_SEARCH_ONLY
 _BRAVE_LLM_PLAN_NOTICE_SHOWN: bool = False
 # Journal des appels HTTP Brave (réglé dans run() via BRAVE_VERBOSE / flags CLI).
 _BRAVE_LOG_REQUESTS: bool = True
+# Stats taille prompt / contexte Ollama (OLLAMA_PROMPT_STATS ou --prompt-stats).
+_OLLAMA_PROMPT_STATS: bool = False
 
 
 def _throttle_brave() -> None:
@@ -498,6 +510,75 @@ def get_ollama_base_url() -> str:
     return "http://localhost:11434"
 
 
+def estimate_tokens_approx(text: str) -> int:
+    """Estimation grossière (FR/EN) : ~4 caractères par token. À comparer à num_ctx, pas une mesure exacte."""
+    n = len(text or "")
+    return max(1, (n + 3) // 4)
+
+
+def get_ollama_model_num_ctx() -> int | None:
+    """
+    Taille de contexte utile pour le comparatif (prompt + génération).
+    1) variable OLLAMA_NUM_CTX si définie
+    2) sinon POST /api/show (clés *context_length* dans model_info)
+    """
+    raw = os.environ.get("OLLAMA_NUM_CTX", "").strip()
+    if raw.isdigit():
+        return int(raw)
+    base = get_ollama_base_url()
+    try:
+        r = requests.post(f"{base}/api/show", json={"name": MODEL}, timeout=8)
+        if r.status_code != 200:
+            return None
+        mi = (r.json() or {}).get("model_info") or {}
+        if not isinstance(mi, dict):
+            return None
+        best: int | None = None
+        for k, v in mi.items():
+            if isinstance(k, str) and k.endswith("context_length") and isinstance(v, int) and v > 0:
+                if best is None or v > best:
+                    best = v
+        return best
+    except Exception:
+        return None
+
+
+def log_ollama_prompt_context_stats(
+    prompt: str,
+    *,
+    context_raw_chars: int,
+    context_injected_chars: int,
+) -> None:
+    if not _OLLAMA_PROMPT_STATS:
+        return
+    est = estimate_tokens_approx(prompt)
+    num_ctx = get_ollama_model_num_ctx()
+    cmax = get_context_char_budget()
+    reserve = get_ollama_gen_reserve_tokens()
+    print(f"  [Ollama] Prompt : {len(prompt)} caractères (~{est} tokens estimés, règle ÷4)")
+    print(
+        f"  [Ollama] Contexte web injecté : {context_injected_chars} car. "
+        f"(brut {context_raw_chars} car., plafond CONTEXT_CHAR_BUDGET={cmax})"
+    )
+    if num_ctx is not None:
+        budget = max(512, num_ctx - reserve)
+        if est <= budget:
+            print(
+                f"  [Ollama] num_ctx≈{num_ctx} : budget prompt ~{budget} tok (après réserve gén. {reserve}) → OK"
+            )
+        else:
+            print(
+                f"  [Ollama] num_ctx≈{num_ctx} : budget prompt ~{budget} tok — "
+                f"Attention : prompt estimé plus grand — risque de troncature côté modèle. "
+                f"Augmentez OLLAMA_NUM_CTX (si la VRAM le permet) ou baissez CONTEXT_CHAR_BUDGET."
+            )
+    else:
+        print(
+            f"  [Ollama] num_ctx inconnu : définissez OLLAMA_NUM_CTX ou lancez `ollama show {MODEL}` "
+            "(cherchez la taille de contexte du GGUF)."
+        )
+
+
 def check_ollama_reachable() -> tuple[bool, str]:
     """Vérifie qu'Ollama répond avant de consommer des quotas Brave."""
     base = get_ollama_base_url()
@@ -526,11 +607,15 @@ def synthesis_failed(text: str) -> bool:
 
 
 def call_ollama(prompt: str, stream: bool = True) -> str:
+    opts: dict = {"temperature": 0.3}
+    nctx = os.environ.get("OLLAMA_NUM_CTX", "").strip()
+    if nctx.isdigit():
+        opts["num_ctx"] = int(nctx)
     payload = {
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "stream": stream,
-        "options": {"temperature": 0.3},
+        "options": opts,
     }
     try:
         if stream:
@@ -615,7 +700,15 @@ def research_one(
     if not context.strip():
         return "[Aucun résultat de recherche.]", source_note, False
 
-    prompt = prompt_template.format(focus=focus, context=context[:CONTEXT_CHAR_BUDGET])
+    context_raw_chars = len(context)
+    c_budget = get_context_char_budget()
+    context_slice = context[:c_budget]
+    prompt = prompt_template.format(focus=focus, context=context_slice)
+    log_ollama_prompt_context_stats(
+        prompt,
+        context_raw_chars=context_raw_chars,
+        context_injected_chars=len(context_slice),
+    )
 
     print(f"  → Synthèse avec Ollama ({MODEL})...")
     text = call_ollama(prompt, stream=True)
@@ -684,11 +777,16 @@ def parse_args():
         action="store_true",
         help="Masquer les lignes [Brave] (méthode, q, HTTP status).",
     )
+    p.add_argument(
+        "--prompt-stats",
+        action="store_true",
+        help="Afficher taille du prompt / estimation tokens vs num_ctx Ollama.",
+    )
     return p.parse_args()
 
 
 def run():
-    global _BRAVE_LOG_REQUESTS
+    global _BRAVE_LOG_REQUESTS, _OLLAMA_PROMPT_STATS
     args = parse_args()
     load_env_files()
     _BRAVE_LOG_REQUESTS = os.environ.get("BRAVE_VERBOSE", "1").lower() not in ("0", "false", "no")
@@ -696,6 +794,10 @@ def run():
         _BRAVE_LOG_REQUESTS = False
     if args.verbose_brave:
         _BRAVE_LOG_REQUESTS = True
+
+    _OLLAMA_PROMPT_STATS = os.environ.get("OLLAMA_PROMPT_STATS", "").lower() in ("1", "true", "yes")
+    if args.prompt_stats:
+        _OLLAMA_PROMPT_STATS = True
 
     sector_key = args.sector.strip().lower()
     mod = load_sector(sector_key)
@@ -773,7 +875,7 @@ def run():
 
         if i < len(todo):
             pause = BRAVE_BETWEEN_FICHES_S if not args.fallback_ddg else 3.0
-            print(f"  Pause {pause:.0f}s (évite 429 Brave / surcharge)…")
+            print(f"  Pause {pause:g}s (évite 429 Brave / surcharge)…")
             time.sleep(pause)
 
     total = len(list(output_dir.glob("*.md")))

@@ -61,26 +61,28 @@ export function ObligationCard({ obligation }: ObligationCardProps) {
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-5 border-b border-gray-50 bg-white">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 pr-1">
+            <h3 className="text-sm font-bold text-gray-900">
               {template?.name}
-              {obligation.status === 'missing' && (
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                  À compléter
-                </span>
-              )}
-              {customTemplate && (
-                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary ring-1 ring-inset ring-primary/20">
-                  Personnalisée
-                </span>
-              )}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
               {template?.description}
             </p>
           </div>
-          <StatusBadge status={obligation.status as ObligationStatus} />
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {obligation.status === "missing" && (
+              <span className="inline-flex items-center whitespace-nowrap rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                À compléter
+              </span>
+            )}
+            {customTemplate && (
+              <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary ring-1 ring-inset ring-primary/20">
+                Personnalisée
+              </span>
+            )}
+            <StatusBadge status={obligation.status as ObligationStatus} />
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">

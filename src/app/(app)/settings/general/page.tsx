@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { sectorLabelFr } from "@/lib/sectors";
 import { Loader2, Save } from "lucide-react";
+import { RequiredFieldMark } from "@/components/required-field-mark";
+import { PageBackNav } from "@/components/page-back-nav";
 
 export default function GeneralSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -62,12 +64,14 @@ export default function GeneralSettingsPage() {
   return (
     <div className="p-6 lg:p-8">
       <div className="max-w-2xl">
+        <PageBackNav className="mb-6" />
         <h2 className="text-xl font-bold text-gray-900 mb-6">Informations générales</h2>
         
         <form onSubmit={handleSave} className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
               Nom de l&apos;organisation
+              <RequiredFieldMark />
             </label>
             <input
               type="text"

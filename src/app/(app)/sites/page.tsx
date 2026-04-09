@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
 import { StatusDot } from "@/components/status-badge";
+import { PageBackNav } from "@/components/page-back-nav";
 import type { ObligationStatus } from "@/lib/types/database";
 import { sitesEnregistresLabel, employesAuSiteLabel } from "@/lib/format-fr";
 
@@ -46,6 +47,7 @@ export default async function SitesPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl">
+      <PageBackNav className="mb-6" />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Sites</h1>

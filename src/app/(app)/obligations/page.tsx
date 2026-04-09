@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
+import { PageBackNav } from "@/components/page-back-nav";
 import { StatusBadge } from "@/components/status-badge";
 import { ObligationsColumnFilters } from "@/components/obligations-column-filters";
 import { countsByStatus } from "@/lib/compliance-score";
@@ -136,6 +137,7 @@ export default async function ObligationsPage({
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl">
+      <PageBackNav className="mb-6" />
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-gray-400" />

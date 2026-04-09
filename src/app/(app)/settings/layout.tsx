@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { id: "general", label: "Général", href: "/settings/general" },
   { id: "account", label: "Compte", href: "/settings/account" },
-  { id: "habilitations", label: "Habilitations", href: "/settings/habilitations" },
+  { id: "habilitations", label: "Obligations", href: "/settings/habilitations" },
   { id: "alerts", label: "Alertes", href: "/settings/alerts" },
   { id: "billing", label: "Abonnement", href: "/settings/billing" },
 ];
@@ -24,7 +24,7 @@ export default function SettingsLayout({
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Paramètres</h1>
         <p className="mt-2 text-gray-500">
-          Gérez votre organisation, vos préférences et vos habilitations.
+          Gérez votre organisation, vos préférences et vos obligations.
         </p>
       </div>
 

@@ -6,6 +6,7 @@ import {
   type AddressSuggestion,
 } from "@/lib/address-search-client";
 import { Loader2, MapPin } from "lucide-react";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 const inputClassName =
   "block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none";
@@ -137,6 +138,7 @@ export function AddressAutocompleteInput({
     <div className="relative">
       <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
         {label}
+        {required ? <RequiredFieldMark /> : null}
       </label>
       <div className="relative mt-1">
         <MapPin

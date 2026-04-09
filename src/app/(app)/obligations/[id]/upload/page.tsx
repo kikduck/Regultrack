@@ -12,6 +12,7 @@ import {
   sortProofsNewestFirst,
   type ProofForDisplay,
 } from "@/lib/proof-display";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function UploadProofPage() {
   const { id: obligationId } = useParams<{ id: string }>();
@@ -281,6 +282,13 @@ export default function UploadProofPage() {
             {success}
           </div>
         )}
+
+        <div>
+          <p className="block text-sm font-medium text-gray-700">
+            Fichier
+            <RequiredFieldMark />
+          </p>
+        </div>
 
         {/* Drop zone */}
         <div

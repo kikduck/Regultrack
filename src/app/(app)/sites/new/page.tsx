@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { resolveOrgSector } from "@/lib/profile-org";
 import { AddressAutocompleteInput } from "@/components/address-autocomplete-input";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function NewSitePage() {
   const [name, setName] = useState("");
@@ -121,6 +122,7 @@ export default function NewSitePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Nom du site
+            <RequiredFieldMark />
           </label>
           <input
             type="text"

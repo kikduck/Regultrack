@@ -1,13 +1,15 @@
+import type { ReactNode } from "react";
 import { Bell, Mail, Clock, ShieldAlert } from "lucide-react";
 
 /**
  * Contenu partagé pour la configuration des alertes.
  * Utilisé par /alerts (sidebar) et /settings/alerts (Paramètres).
  */
-export function AlertsPreferencesPanel() {
+export function AlertsPreferencesPanel({ header }: { header?: ReactNode }) {
   return (
     <div className="p-6 lg:p-8">
       <div className="max-w-3xl">
+        {header}
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Préférences d&apos;alertes
         </h2>

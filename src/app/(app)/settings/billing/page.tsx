@@ -41,7 +41,7 @@ export default function BillingSettingsPage() {
               {[
                 "Registre réglementaire complet",
                 "Tableau de bord multi-sites",
-                "Habilitations personnalisées",
+                "Obligations personnalisées",
                 "Export PDF illimité",
                 "Alertes email automatiques",
                 "Support prioritaire"

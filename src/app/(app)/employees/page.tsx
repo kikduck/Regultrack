@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Users, Plus } from "lucide-react";
+import { EmployeeTableRow } from "@/components/employee-table-row";
+import { PageBackNav } from "@/components/page-back-nav";
 import { StatusDot } from "@/components/status-badge";
 import type { ObligationStatus } from "@/lib/types/database";
 import { employesActifsLabel } from "@/lib/format-fr";
@@ -52,6 +54,7 @@ export default async function EmployeesPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl">
+      <PageBackNav className="mb-6" />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Employés</h1>
@@ -106,17 +109,18 @@ export default async function EmployeesPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {employees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                <EmployeeTableRow
+                  key={emp.id}
+                  employeeId={emp.id}
+                  nameForA11y={emp.full_name}
+                >
                   <td className="px-5 py-3">
                     <StatusDot status={getEmployeeStatus(emp.id)} />
                   </td>
                   <td className="px-5 py-3">
-                    <Link
-                      href={`/employees/${emp.id}`}
-                      className="font-medium text-gray-900 hover:text-primary"
-                    >
+                    <span className="font-medium text-gray-900 group-hover:text-primary transition-colors">
                       {emp.full_name}
-                    </Link>
+                    </span>
                   </td>
                   <td className="px-5 py-3 text-gray-500">
                     {emp.job_title || "—"}
@@ -124,7 +128,7 @@ export default async function EmployeesPage() {
                   <td className="px-5 py-3 text-gray-500">
                     {siteMap.get(emp.site_id) || "—"}
                   </td>
-                </tr>
+                </EmployeeTableRow>
               ))}
             </tbody>
           </table>

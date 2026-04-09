@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AddressAutocompleteInput } from "@/components/address-autocomplete-input";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function EditSitePage() {
   const [name, setName] = useState("");
@@ -91,6 +92,7 @@ export default function EditSitePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Nom du site
+            <RequiredFieldMark />
           </label>
           <input
             type="text"

@@ -5,14 +5,26 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { SiteActions } from "@/components/site-actions";
 import { ObligationCard } from "@/components/obligation-card";
+import { ObligationEntityStatusFilters } from "@/components/obligation-entity-status-filters";
+import { countsByStatus } from "@/lib/compliance-score";
+import {
+  parseEntityObligationStatusFilter,
+  sortEntityObligationsByUrgency,
+} from "@/lib/obligation-entity-filters";
 import type { ObligationStatus } from "@/lib/types/database";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ status?: string }>;
 }
 
-export default async function SiteDetailPage({ params }: PageProps) {
+export default async function SiteDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { id } = await params;
+  const { status: statusParam } = await searchParams;
+  const statusFilter = parseEntityObligationStatusFilter(statusParam);
   const supabase = await createClient();
 
   const {
@@ -37,7 +49,7 @@ export default async function SiteDetailPage({ params }: PageProps) {
       .order("full_name"),
     supabase
       .from("obligations")
-      .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, applies_to), custom_obligation_templates(name, description, renewal_months, renewal_process, required_documents, official_link, help_text, applies_to), employees(full_name), proofs(*, profiles(full_name))")
+      .select("*, obligation_templates(name, description, renewal_months, renewal_process, required_documents, competent_authority, official_url, legal_reference, help_text, proof_type, applies_to), custom_obligation_templates(name, description, renewal_months, renewal_process, required_documents, official_link, help_text, applies_to), employees(full_name), proofs(*, profiles(full_name))")
       .eq("site_id", id),
   ]);
 
@@ -51,6 +63,13 @@ export default async function SiteDetailPage({ params }: PageProps) {
   const siteObligations = obligations.filter(
     (o) => o.applies_to === "site"
   );
+  const siteCounts = countsByStatus(siteObligations);
+  const filteredSiteObligations = statusFilter
+    ? siteObligations.filter((o) => o.status === statusFilter)
+    : siteObligations;
+  const orderedSiteObligations =
+    sortEntityObligationsByUrgency(filteredSiteObligations);
+
   const employeeObligations = obligations.filter(
     (o) => o.applies_to === "employee"
   );
@@ -91,13 +110,24 @@ export default async function SiteDetailPage({ params }: PageProps) {
       {siteObligations.length > 0 && (
         <div className="mb-12">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Obligations du site
+            Obligations du site ({siteObligations.length})
           </h2>
-          <div className="grid grid-cols-1 gap-6">
-            {siteObligations.map((o) => (
-              <ObligationCard key={o.id} obligation={o as any} />
-            ))}
-          </div>
+          <ObligationEntityStatusFilters
+            basePath={`/sites/${id}`}
+            counts={siteCounts}
+            statusFilter={statusFilter}
+          />
+          {orderedSiteObligations.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+              Aucune obligation ne correspond à ce filtre.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {orderedSiteObligations.map((o) => (
+                <ObligationCard key={o.id} obligation={o as any} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

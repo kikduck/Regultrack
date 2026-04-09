@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Shield } from "lucide-react";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -60,6 +61,7 @@ export default function LoginPage() {
               className="block text-sm font-medium text-gray-700"
             >
               Email
+              <RequiredFieldMark />
             </label>
             <input
               id="email"
@@ -78,6 +80,7 @@ export default function LoginPage() {
               className="block text-sm font-medium text-gray-700"
             >
               Mot de passe
+              <RequiredFieldMark />
             </label>
             <input
               id="password"

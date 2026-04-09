@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import type { Site } from "@/lib/types/database";
 
 import { JobTitleSelect } from "@/components/job-title-select";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function EditEmployeePage() {
   const [fullName, setFullName] = useState("");
@@ -133,6 +134,7 @@ export default function EditEmployeePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Nom complet
+            <RequiredFieldMark />
           </label>
           <input
             type="text"
@@ -158,6 +160,7 @@ export default function EditEmployeePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Poste / Fonction
+            <RequiredFieldMark />
           </label>
           {orgId && (
             <JobTitleSelect
@@ -175,6 +178,7 @@ export default function EditEmployeePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Site d&apos;affectation
+            <RequiredFieldMark />
           </label>
           <select
             value={siteId}

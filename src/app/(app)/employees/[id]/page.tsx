@@ -1,18 +1,28 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload } from "lucide-react";
-import { StatusBadge } from "@/components/status-badge";
+import { ArrowLeft } from "lucide-react";
 import { EmployeeActions } from "@/components/employee-actions";
 import { ObligationCard } from "@/components/obligation-card";
-import type { ObligationStatus } from "@/lib/types/database";
+import { ObligationEntityStatusFilters } from "@/components/obligation-entity-status-filters";
+import { countsByStatus } from "@/lib/compliance-score";
+import {
+  parseEntityObligationStatusFilter,
+  sortEntityObligationsByUrgency,
+} from "@/lib/obligation-entity-filters";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ status?: string }>;
 }
 
-export default async function EmployeeDetailPage({ params }: PageProps) {
+export default async function EmployeeDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { id } = await params;
+  const { status: statusParam } = await searchParams;
+  const statusFilter = parseEntityObligationStatusFilter(statusParam);
   const supabase = await createClient();
 
   const {
@@ -35,6 +45,11 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
     .order("created_at");
 
   const obligationsList = obligations || [];
+  const counts = countsByStatus(obligationsList);
+  const filtered = statusFilter
+    ? obligationsList.filter((o) => o.status === statusFilter)
+    : obligationsList;
+  const ordered = sortEntityObligationsByUrgency(filtered);
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
@@ -70,11 +85,28 @@ export default async function EmployeeDetailPage({ params }: PageProps) {
           Aucune obligation rattachée à cet employé.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {obligationsList.map((obligation) => (
-            <ObligationCard key={obligation.id} obligation={obligation as any} />
-          ))}
-        </div>
+        <>
+          <ObligationEntityStatusFilters
+            basePath={`/employees/${id}`}
+            counts={counts}
+            statusFilter={statusFilter}
+          />
+
+          {ordered.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+              Aucune obligation ne correspond à ce filtre.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {ordered.map((obligation) => (
+                <ObligationCard
+                  key={obligation.id}
+                  obligation={obligation as any}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

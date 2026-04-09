@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  Landmark,
   ClipboardList,
   Bell,
   Shield,
@@ -16,14 +17,35 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const navItems = [
-  { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/sites", label: "Sites", icon: Building2 },
-  { href: "/employees", label: "Employés", icon: Users },
-  { href: "/obligations", label: "Obligations", icon: ClipboardList },
-  { href: "/alerts", label: "Alertes", icon: Bell },
-  { href: "/settings", label: "Paramètres", icon: Settings },
+const navSections = [
+  [
+    {
+      href: "/dashboard",
+      label: "Tableau de bord",
+      icon: LayoutDashboard,
+    },
+  ],
+  [
+    { href: "/employees", label: "Employés", icon: Users },
+    { href: "/sites", label: "Sites", icon: Building2 },
+    { href: "/organisation", label: "Organisation", icon: Landmark },
+    { href: "/obligations", label: "Obligations", icon: ClipboardList },
+  ],
+  [
+    { href: "/alerts", label: "Alertes", icon: Bell },
+    { href: "/settings", label: "Paramètres", icon: Settings },
+  ],
 ] as const;
+
+function SidebarNavDivider({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div
+      role="separator"
+      aria-hidden
+      className={`my-2 h-px shrink-0 bg-white/10 ${collapsed ? "mx-2" : "mx-3"}`}
+    />
+  );
+}
 
 /** Placeholder SSR pour Suspense (même largeur que la barre dépliée). */
 export function SidebarFallback() {
@@ -34,11 +56,14 @@ export function SidebarFallback() {
     >
       <div className="h-[73px] border-b border-white/10 px-4 py-5" />
       <div className="flex-1 space-y-1 px-2 py-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-10 rounded-lg bg-white/5"
-          />
+        <div className="h-10 rounded-lg bg-white/5" />
+        <div className="my-2 h-px mx-3 bg-white/10" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-10 rounded-lg bg-white/5" />
+        ))}
+        <div className="my-2 h-px mx-3 bg-white/10" />
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="h-10 rounded-lg bg-white/5" />
         ))}
       </div>
       <div className="border-t border-white/10 px-2 py-3">
@@ -112,24 +137,31 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 px-2 py-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = isSidebarItemActive(pathname, item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-sidebar-active text-white"
-                  : "text-sidebar-text hover:bg-white/5 hover:text-white"
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+        {navSections.map((section, sectionIndex) => (
+          <div key={sectionIndex}>
+            {sectionIndex > 0 && (
+              <SidebarNavDivider collapsed={collapsed} />
+            )}
+            {section.map((item) => {
+              const isActive = isSidebarItemActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-sidebar-active text-white"
+                      : "text-sidebar-text hover:bg-white/5 hover:text-white"
+                  }`}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="border-t border-white/10 px-2 py-3">

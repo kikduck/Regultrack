@@ -6,7 +6,7 @@ export function renewalMonthsSummaryFr(months: number): string {
   return `tous les ${months} mois`;
 }
 
-/** Ligne « Renouvellement : … » dans les listes d’habilitations. */
+/** Ligne « Renouvellement : … » dans les listes d’obligations. */
 export function renewalMonthsLabelFr(months: number): string {
   if (months === 0) {
     return "Sans cycle (titre / diplôme)";

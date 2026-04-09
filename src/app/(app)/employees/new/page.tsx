@@ -9,6 +9,7 @@ import type { Site } from "@/lib/types/database";
 import { JobTitleSelect } from "@/components/job-title-select";
 import { resolveOrgSector } from "@/lib/profile-org";
 import { jobTitleEmptyLabelFr } from "@/lib/sectors";
+import { RequiredFieldMark } from "@/components/required-field-mark";
 
 export default function NewEmployeePage() {
   const [fullName, setFullName] = useState("");
@@ -182,6 +183,7 @@ export default function NewEmployeePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Nom complet
+            <RequiredFieldMark />
           </label>
           <input
             type="text"
@@ -209,6 +211,7 @@ export default function NewEmployeePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Poste / Fonction
+            <RequiredFieldMark />
           </label>
           {orgId && (
             <JobTitleSelect
@@ -227,6 +230,7 @@ export default function NewEmployeePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Site d&apos;affectation
+            <RequiredFieldMark />
           </label>
           {sites.length === 0 ? (
             <p className="mt-1 text-sm text-gray-500">
